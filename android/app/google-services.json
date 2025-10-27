@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "113544695495",
+    "project_id": "cineflex-8abec",
+    "storage_bucket": "cineflex-8abec.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:113544695495:android:163e27e8e7ab2b9c2838e2",
+        "android_client_info": {
+          "package_name": "com.moviesapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "113544695495-p7f1d9h1ri9utpg5s0bec5i48n8hnvg0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCO4JSldsv2ggpd50VsfwtA6gctjZYVL8s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "113544695495-p7f1d9h1ri9utpg5s0bec5i48n8hnvg0.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
