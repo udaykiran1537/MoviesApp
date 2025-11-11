@@ -261,7 +261,7 @@ const HomeScreen = () => {
         backdrop_path: movie.backdrop_path,
         vote_average: movie.vote_average,
         release_date: movie.release_date || movie.first_air_date,
-        image: movie.image,
+        
       }
     });
   };
@@ -300,11 +300,10 @@ const HomeScreen = () => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      <StatusBar barStyle="light-content" translucent backgroundColor="#000" />
       <Animated.View style={[styles.navbar, { opacity: fadeAnim }]}>
         <View style={styles.navContent}>
           <Text style={styles.logo}>CINEFLIX</Text>
-          <View style={styles.rightActions}></View>
         </View>
       </Animated.View>
       <ScrollView 
@@ -381,9 +380,8 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    paddingTop: 50,
     paddingHorizontal: 20,
-    paddingBottom: 15,
+    marginTop:10,
     backgroundColor: 'rgba(13, 17, 23, 0.9)',
     zIndex: 1000,
   },

@@ -239,16 +239,7 @@ const SeriesScreen = () => {
     ]).start();
   }, []);
 
-  const handleLogout = () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Logout', onPress: () => dispatch(logout()) },
-      ]
-    );
-  };
+ 
 
   const handleSeriesPress = (series) => {
     navigation.navigate('SeriesDetail', { 
@@ -261,7 +252,7 @@ const SeriesScreen = () => {
         vote_average: typeof series.vote_average === 'number' ? series.vote_average : 
                      (typeof series.rating === 'string' ? parseFloat(series.rating) : 0),
         first_air_date: series.first_air_date || series.firstAirDate,
-        image: series.image,
+        
       }
     });
   };

@@ -283,7 +283,7 @@ const SeriesDetail = () => {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButtonHeader} onPress={() => navigation.goBack()}>
+        <TouchableOpacity style={styles.backButtonHeader} onPress={() => navigation?.goBack()}>
           <Text style={styles.backIcon}>‹</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>
@@ -684,7 +684,7 @@ const SeriesDetail = () => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    
     backgroundColor: '#0d1117',
   },
   loadingContainer: {

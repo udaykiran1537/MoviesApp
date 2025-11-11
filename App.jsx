@@ -7,6 +7,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import {store} from './src/redux/Store'
 import { Provider, useDispatch } from 'react-redux';
 import { loadWishlistFromStorage } from './src/redux/slices/wishlistSlice';
+import { StatusBar } from 'react-native';
 
 
 const AppInitializer = () => {
@@ -18,11 +19,10 @@ const AppInitializer = () => {
 
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={{ flex: 1 }}>
+      <StatusBar hidden={true}/>
         <NavigationContainer>
           <StackNavigator/>
         </NavigationContainer>
-      </SafeAreaView>
     </SafeAreaProvider>
   );
 };
