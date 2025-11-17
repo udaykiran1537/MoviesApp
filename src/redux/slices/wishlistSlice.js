@@ -74,6 +74,11 @@ const wishlistSlice = createSlice({
       state.totalSeries = state.wishlistSeries.length;
       state.totalItems = state.wishlistMovies.length + state.wishlistSeries.length;
     },
+
+    clearWishlist: (state) => {
+  state.wishlistMovies = [];
+  state.wishlistSeries = [];
+},
     toggleMovieInWishlist: (state, action) => {
       const movie = action.payload;
       const existingIndex = state.wishlistMovies.findIndex(item => item.id === movie.id);
@@ -203,6 +208,7 @@ export const {
   clearSeriesWishlist,
   setWishlistFromStorage,
   sortWishlist,
+  clearWishlist
 } = wishlistSlice.actions;
 
 export default wishlistSlice.reducer;

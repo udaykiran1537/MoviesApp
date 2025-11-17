@@ -176,7 +176,7 @@ const MovieDetail = () => {
       dispatch(setMovieDetails(data));
       
     } catch (error) {
-      console.error('🚨 Error fetching movie details:', error);
+      // console.error('🚨 Error fetching movie details:', error);
       dispatch(setMovieDetailsError(`Failed to load movie details: ${error.message}`));
     }
   };
@@ -289,7 +289,7 @@ const MovieDetail = () => {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
       
-      {/* Header with Back Button */}
+     
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButtonHeader} onPress={() => navigation.goBack()}>
           <Text style={styles.backIcon}>‹</Text>

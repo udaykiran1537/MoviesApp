@@ -21,7 +21,7 @@ import {
   StatusBar,
   Animated,
   ScrollView,
-  Alert,  // 👈 ADD ALERT
+  Alert,  
 } from 'react-native';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from '@react-native-firebase/auth';
 import { useNavigation } from '@react-navigation/native';
@@ -109,7 +109,7 @@ const LoginScreen = () => {
       }));
       
       dispatch(clearFormData());
-      // dispatch(authSuccess())
+      
 
       
     } catch (error) {
@@ -118,7 +118,7 @@ const LoginScreen = () => {
     }
   }
 
-  // 👈 FIX SIGNUP FUNCTION:
+ 
   const signUpTestFn = async () => {
     if (!validateForm()) return;
     
@@ -154,7 +154,7 @@ const LoginScreen = () => {
     }
   }
 
-  // 👈 FIX LOGIN FUNCTION:
+  
   const loginTestFn = async () => {
     if (!validateForm()) return;
     
@@ -218,7 +218,7 @@ const LoginScreen = () => {
     }
   }, [error]);
 
-  // Navigate to Bottom tabs when authenticated
+  
   useEffect(() => {
     if (isAuthenticated) {
       navigation.replace('Bottom');
@@ -230,7 +230,7 @@ const LoginScreen = () => {
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <StatusBar barStyle="light-content" backgroundColor="#0d1117" />
 
-      {/* Header Section */}
+      
       <Animated.View
         style={[
           styles.headerContainer,
@@ -261,7 +261,7 @@ const LoginScreen = () => {
         </Text>
       </Animated.View>
 
-      {/* Form Section */}
+     
       <Animated.View
         style={[
           styles.formContainer,
@@ -271,7 +271,7 @@ const LoginScreen = () => {
           },
         ]}
       >
-        {/* Username Input - Only for Sign Up */}
+        
         {isSignUp && (
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>Username</Text>
@@ -286,7 +286,7 @@ const LoginScreen = () => {
           </View>
         )}
 
-        {/* Email Input */}
+       
         <View style={styles.inputContainer}>
           <Text style={styles.inputLabel}>Email</Text>
           <TextInput
@@ -295,12 +295,12 @@ const LoginScreen = () => {
             placeholderTextColor="#6e7681"
             keyboardType="email-address"
             autoCapitalize="none"
-            value={formData.email}  // 👈 ADD VALUE
+            value={formData.email}  
             onChangeText={(value) => handleInputChange('email', value)}
           />
         </View>
 
-        {/* Password Input */}
+        
         <View style={styles.inputContainer}>
           <Text style={styles.inputLabel}>Password</Text>
           <TextInput
@@ -308,12 +308,12 @@ const LoginScreen = () => {
             placeholder="Enter your password"
             placeholderTextColor="#6e7681"
             secureTextEntry={true}
-            value={formData.password}  // 👈 ADD VALUE
+            value={formData.password}  
             onChangeText={(value) => handleInputChange('password', value)}
           />
         </View>
 
-        {/* Confirm Password Input - Only for Sign Up */}
+        
         {isSignUp && (
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>Confirm Password</Text>
@@ -328,14 +328,14 @@ const LoginScreen = () => {
           </View>
         )}
 
-        {/* Forgot Password - Only for Login */}
+        
         {!isSignUp && (
           <TouchableOpacity style={styles.forgotPasswordContainer}>
             <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
           </TouchableOpacity>
         )}
 
-        {/* Action Button */}
+       
         <TouchableOpacity 
           style={[
             styles.loginButton,
@@ -349,7 +349,6 @@ const LoginScreen = () => {
           </Text>
         </TouchableOpacity>
 
-        {/* Social Login Buttons - Only for Login */}
         {!isSignUp && (
           <>
             <View style={styles.dividerContainer}>
@@ -363,14 +362,11 @@ const LoginScreen = () => {
               <Text style={styles.socialButtonText}>Continue with Google</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={[styles.socialButton, styles.facebookButton]}>
-              <Text style={styles.socialIcon}>f</Text>
-              <Text style={styles.socialButtonText}>Continue with Facebook</Text>
-            </TouchableOpacity>
+         
           </>
         )}
 
-        {/* Toggle Mode Section */}
+        
         <>
         <View style={styles.signupContainer}>
           <Text style={styles.signupText}>
@@ -394,7 +390,7 @@ const LoginScreen = () => {
   );
 };
 
-// ... your styles remain the same ...
+
 
 export default LoginScreen;
 
