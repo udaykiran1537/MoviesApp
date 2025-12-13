@@ -6,6 +6,7 @@ import movieDetailSlice from './slices/movieDetailSlice';
 import seriesDetailSlice from './slices/seriesDetailSlice'; 
 import searchSlice from './slices/searchSlice'; 
 import wishlistSlice from './slices/wishlistSlice'; 
+import themeSlice from './slices/themeSlice';
 
 
 export const store = configureStore({
@@ -17,6 +18,7 @@ export const store = configureStore({
         seriesDetail: seriesDetailSlice, 
         search: searchSlice, 
         wishlist: wishlistSlice, 
+        theme: themeSlice,
 
     }
 });

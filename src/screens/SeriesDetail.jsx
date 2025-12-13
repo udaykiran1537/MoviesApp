@@ -10,7 +10,6 @@ import {
   StatusBar,
   ActivityIndicator,
   Alert,
-  FlatList,
   Linking,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
@@ -79,8 +78,24 @@ const SeriesDetail = () => {
   const route = useRoute();
   const navigation = useNavigation();
   const dispatch = useDispatch();
-  const { series } = route.params;
+  const { series } = route.params || {};
   const [selectedSeason, setSelectedSeason] = useState(1);
+
+  // Safety check for invalid series data
+  if (!series || !series.id) {
+    return (
+      <View style={styles.errorContainer}>
+        <StatusBar barStyle="light-content" backgroundColor="#0d1117" />
+        <Text style={styles.errorText}>Invalid series data. Please try again.</Text>
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.backButtonText}>Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   const {
     seriesDetails,
@@ -116,13 +131,14 @@ const SeriesDetail = () => {
       first_air_date: series.first_air_date,
       vote_average: series.vote_average,
       type: 'series',
-      image:series.image
+      image: series.image
     };
     dispatch(toggleSeriesInWishlist(seriesData));
     dispatch(saveWishlistToStorage());
   };
 
   useEffect(() => {
+    console.log('SeriesDetail mounted with series:', series);
     dispatch(setCurrentSeriesId(series.id));
     dispatch(setCurrentSeasonNumber(selectedSeason));
     fetchSeriesDetails();
@@ -279,83 +295,102 @@ const SeriesDetail = () => {
     );
   }
 
+  // Get image URLs with fallbacks
+  const getBackdropUrl = () => {
+    if (seriesDetails?.backdrop_path) {
+      return getImageUrl(seriesDetails.backdrop_path);
+    }
+    if (series.backdrop_path) {
+      return getImageUrl(series.backdrop_path);
+    }
+    if (series.image) {
+      return series.image;
+    }
+    return 'https://via.placeholder.com/500x750?text=No+Image';
+  };
+
+  const getPosterUrl = () => {
+    if (seriesDetails?.poster_path) {
+      return getImageUrl(seriesDetails.poster_path);
+    }
+    if (series.poster_path) {
+      return getImageUrl(series.poster_path);
+    }
+    if (series.image) {
+      return series.image;
+    }
+    return 'https://via.placeholder.com/300x450?text=No+Poster';
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButtonHeader} onPress={() => navigation?.goBack()}>
-          <Text style={styles.backIcon}>‹</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>
-          {series.name || series.title}
-        </Text>
-        <View style={styles.headerSpacer} />
-      </View>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* Hero Section */}
         <View style={styles.heroSection}>
-          <Image 
-            source={{ 
-              uri: getImageUrl(seriesDetails?.backdrop_path || series.backdrop_path || series.poster_path, 'w780') 
-            }} 
+          <Image
+            source={{ uri: getBackdropUrl() }}
             style={styles.backdropImage}
-            defaultSource={{ uri: 'https://via.placeholder.com/780x400/0d1117/ffffff?text=No+Image' }}
           />
-          <View style={styles.heroOverlay}>
+          <View style={[styles.heroOverlay, { backgroundColor: 'rgba(13, 17, 23, 0.8)' }]}>
             <View style={styles.heroContent}>
-              <Image 
-                source={{ 
-                  uri: series.image || getImageUrl(seriesDetails?.poster_path || series.poster_path, 'w500') 
-                }} 
+              <Image
+                source={{ uri: getPosterUrl() }}
                 style={styles.posterImage}
-                defaultSource={{ uri: 'https://via.placeholder.com/300x450/0d1117/ffffff?text=No+Image' }}
               />
               <View style={styles.seriesInfo}>
-                <Text style={styles.seriesTitle}>{series.name || series.title}</Text>
+                <Text style={styles.seriesTitle}>{seriesDetails?.name || series.name}</Text>
                 <View style={styles.seriesMeta}>
                   <View style={styles.ratingContainer}>
                     <Text style={styles.ratingIcon}>⭐</Text>
                     <Text style={styles.rating}>
-                      {(() => {
-                        const rating = seriesDetails?.vote_average || series.vote_average;
-                        if (rating && typeof rating === 'number' && rating > 0) {
-                          return rating.toFixed(1);
-                        }
-                        return 'NR';
-                      })()}
+                      {seriesDetails?.vote_average?.toFixed(1) || series.vote_average?.toFixed(1)}
                     </Text>
                   </View>
                   <View style={styles.metaDivider} />
                   <Text style={styles.year}>
-                    {new Date(series.first_air_date || series.release_date).getFullYear()}
+                    {(seriesDetails?.first_air_date || series.first_air_date || '').slice(0, 4)}
                   </Text>
                   {seriesDetails?.number_of_seasons && (
                     <>
                       <View style={styles.metaDivider} />
                       <Text style={styles.seasons}>
-                        {seriesDetails.number_of_seasons} Season{seriesDetails.number_of_seasons > 1 ? 's' : ''}
+                        {seriesDetails.number_of_seasons} Season
+                        {seriesDetails.number_of_seasons > 1 ? 's' : ''}
                       </Text>
                     </>
                   )}
                   {seriesDetails?.status && (
                     <>
                       <View style={styles.metaDivider} />
-                      <View style={[styles.statusBadge, { 
-                        backgroundColor: seriesDetails.status === 'Ended' ? '#ff4757' : 
-                                        seriesDetails.status === 'Returning Series' ? '#2ed573' : '#ffa502' 
-                      }]}>
-                        <Text style={styles.statusText}>
-                          {seriesDetails.status}
-                        </Text>
+                      <View
+                        style={[
+                          styles.statusBadge,
+                          {
+                            backgroundColor:
+                              seriesDetails.status === 'Ended'
+                                ? '#e50914'
+                                : seriesDetails.status === 'Returning Series'
+                                ? '#2ed573'
+                                : '#747d8c',
+                          },
+                        ]}
+                      >
+                        <Text style={styles.statusText}>{seriesDetails.status}</Text>
                       </View>
                     </>
                   )}
                 </View>
                 <View style={styles.genres}>
-                  {seriesDetails?.genres?.slice(0, 3).map((genre, index) => (
-                    <View key={genre.id} style={[styles.genreContainer, { backgroundColor: getGenreColor(genre.name) }]}>
-                      <Text style={styles.genre}>
-                        {genre.name}
-                      </Text>
+                  {seriesDetails?.genres?.map((genre) => (
+                    <View
+                      key={genre.id}
+                      style={[
+                        styles.genreContainer,
+                        { backgroundColor: getGenreColor(genre.name) },
+                      ]}
+                    >
+                      <Text style={styles.genre}>{genre.name}</Text>
                     </View>
                   ))}
                 </View>
@@ -364,318 +399,228 @@ const SeriesDetail = () => {
             <View style={styles.actionButtons}>
               <TouchableOpacity style={styles.mainPlayButton} onPress={handlePlaySeries}>
                 <View style={styles.playButtonContent}>
-                  <Text style={styles.playIcon}>▶</Text>
-                  <Text style={styles.mainPlayButtonText}>
-                    {seriesVideosLoading ? 'Loading...' : 'Play Trailer'}
-                  </Text>
+                  <Text style={styles.playIconMain}>▶</Text>
+                  <Text style={styles.mainPlayButtonText}>Play Trailer</Text>
                 </View>
               </TouchableOpacity>
               <View style={styles.secondaryButtons}>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={[
-                    styles.watchlistButton, 
-                    isInWishlist && styles.watchlistButtonActive
-                  ]} 
+                    styles.watchlistButton,
+                    isInWishlist && styles.watchlistButtonActive,
+                  ]}
                   onPress={handleWishlistToggle}
                 >
-                  <Text style={[
-                    styles.watchlistButtonText,
-                    isInWishlist && styles.watchlistButtonTextActive
-                  ]}>
-                    {isInWishlist ? '✓ My List' : '+ My List'}
+                  <Text
+                    style={[
+                      styles.watchlistButtonText,
+                      isInWishlist && styles.watchlistButtonTextActive,
+                    ]}
+                  >
+                    {isInWishlist ? 'Remove from Watchlist' : 'Add to Watchlist'}
                   </Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.infoButton}>
-                  <Text style={styles.infoButtonText}>ℹ Info</Text>
                 </TouchableOpacity>
               </View>
             </View>
           </View>
         </View>
+
+        {/* Overview Section */}
         <View style={styles.overviewSection}>
-          <Text style={styles.sectionTitle}>Synopsis</Text>
-          <Text style={styles.overview}>
-            {series.overview || seriesDetails?.overview || 'No overview available.'}
-          </Text>
-          {seriesDetails && (
-            <>
-              <Text style={styles.sectionTitle}>Series Information</Text>
-              <View style={styles.detailsGrid}>
-                <View style={styles.detailCard}>
-                  <View style={styles.detailIcon}>
-                    <Text style={styles.detailIconText}>📺</Text>
-                  </View>
-                  <Text style={styles.detailLabel}>Seasons</Text>
-                  <Text style={styles.detailValue}>
-                    {seriesDetails.number_of_seasons || 'N/A'}
-                  </Text>
-                </View>
-                <View style={styles.detailCard}>
-                  <View style={styles.detailIcon}>
-                    <Text style={styles.detailIconText}>🎬</Text>
-                  </View>
-                  <Text style={styles.detailLabel}>Episodes</Text>
-                  <Text style={styles.detailValue}>
-                    {seriesDetails.number_of_episodes || 'N/A'}
-                  </Text>
-                </View>
-                <View style={styles.detailCard}>
-                  <View style={styles.detailIcon}>
-                    <Text style={styles.detailIconText}>⏱️</Text>
-                  </View>
-                  <Text style={styles.detailLabel}>Runtime</Text>
-                  <Text style={styles.detailValue}>
-                    {seriesDetails.episode_run_time?.[0] ? `${seriesDetails.episode_run_time[0]} min` : 'N/A'}
-                  </Text>
-                </View>
-                <View style={styles.detailCard}>
-                  <View style={styles.detailIcon}>
-                    <Text style={styles.detailIconText}>🌍</Text>
-                  </View>
-                  <Text style={styles.detailLabel}>Language</Text>
-                  <Text style={styles.detailValue}>
-                    {seriesDetails.original_language?.toUpperCase() || 'N/A'}
-                  </Text>
-                </View>
-              </View>
-              {seriesDetails.production_companies?.length > 0 && (
-                <>
-                  <Text style={styles.sectionTitle}>Production Studios</Text>
-                  <View style={styles.productionSection}>
-                    {seriesDetails.production_companies.slice(0, 4).map((company, index) => (
-                      <View key={company.id} style={styles.productionCompanyContainer}>
-                        {company.logo_path ? (
-                          <Image 
-                            source={{ uri: getImageUrl(company.logo_path, 'w185') }}
-                            style={styles.productionLogo}
-                          />
-                        ) : (
-                          <View style={styles.productionPlaceholder}>
-                            <Text style={styles.productionInitial}>
-                              {company.name.charAt(0)}
-                            </Text>
-                          </View>
-                        )}
-                        <Text style={styles.productionCompanyName} numberOfLines={2}>
-                          {company.name}
-                        </Text>
-                        <Text style={styles.productionCountry}>
-                          {company.origin_country || 'International'}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-                </>
-              )}
-            </>
-          )}
+          <Text style={styles.sectionTitle}>Overview</Text>
+          <Text style={styles.overview}>{seriesDetails?.overview || series.overview}</Text>
         </View>
-        {seriesDetails?.seasons && seriesDetails.seasons.length > 0 && (
+
+        {/* Seasons Section */}
+        {seriesDetails?.seasons && (
           <View style={styles.seasonsSection}>
             <View style={styles.episodesSectionHeader}>
-              <Text style={styles.sectionTitle}>Seasons & Episodes</Text>
-              <TouchableOpacity style={styles.viewAllButton}>
-                <Text style={styles.viewAllText}>View All</Text>
-              </TouchableOpacity>
+              <Text style={styles.sectionTitle}>Seasons</Text>
             </View>
-            <FlatList
-              data={seriesDetails.seasons.filter(season => season.season_number > 0)}
-              renderItem={({ item }) => (
-                <TouchableOpacity 
-                  style={[
-                    styles.seasonButton,
-                    selectedSeason === item.season_number && styles.selectedSeasonButton
-                  ]}
-                  onPress={() => setSelectedSeason(item.season_number)}
-                >
-                  <Text style={[
-                    styles.seasonButtonText,
-                    selectedSeason === item.season_number && styles.selectedSeasonButtonText
-                  ]}>
-                    Season {item.season_number}
-                  </Text>
-                </TouchableOpacity>
-              )}
-              keyExtractor={(item) => item.id.toString()}
+            <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.seasonsList}
-            />
+            >
+              {seriesDetails.seasons.map((season) => (
+                <TouchableOpacity
+                  key={season.season_number}
+                  style={[
+                    styles.seasonButton,
+                    selectedSeason === season.season_number && styles.selectedSeasonButton,
+                  ]}
+                  onPress={() => setSelectedSeason(season.season_number)}
+                >
+                  <Text
+                    style={[
+                      styles.seasonButtonText,
+                      selectedSeason === season.season_number && styles.selectedSeasonButtonText,
+                    ]}
+                  >
+                    {season.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            {/* Episodes List */}
             {seasonEpisodesLoading ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="small" color="#e50914" />
+              <View style={styles.loadingContainerInline}>
+                <ActivityIndicator size="large" color="#e50914" />
                 <Text style={styles.loadingText}>Loading episodes...</Text>
               </View>
             ) : seasonEpisodesError ? (
-              <Text style={styles.errorText}>{seasonEpisodesError}</Text>
-            ) : seasonEpisodes && seasonEpisodes.length > 0 ? (
-              <FlatList
-                data={seasonEpisodes.slice(0, 5)}
-                renderItem={({ item }) => (
-                  <View style={styles.episodeItem}>
-                    <TouchableOpacity 
-                      style={styles.episodeImageContainer}
-                      onPress={() => handleEpisodePress(item)}
-                    >
-                      <Image 
-                        source={{ uri: getImageUrl(item.still_path, 'w300') }} 
+              <View style={styles.errorContainerInline}>
+                <Text style={styles.errorText}>{seasonEpisodesError}</Text>
+                <TouchableOpacity style={styles.retryButton} onPress={() => fetchSeasonEpisodes(selectedSeason)}>
+                  <Text style={styles.retryButtonText}>Retry</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              seasonEpisodes && seasonEpisodes.length > 0 ? (
+                seasonEpisodes.map((episode) => (
+                  <TouchableOpacity
+                    key={episode.id}
+                    style={styles.episodeItem}
+                    onPress={() => handleEpisodePress(episode)}
+                  >
+                    <View style={styles.episodeImageContainer}>
+                      <Image
+                        source={{ uri: getImageUrl(episode.still_path) }}
                         style={styles.episodeImage}
-                        defaultSource={{ uri: 'https://via.placeholder.com/300x180/0d1117/ffffff?text=Episode+Image' }}
                       />
                       <View style={styles.playOverlay}>
                         <View style={styles.playButton}>
                           <Text style={styles.playIcon}>▶</Text>
                         </View>
                       </View>
-                    </TouchableOpacity>
-                    <View style={styles.episodeInfo}>
-                      <TouchableOpacity 
-                        onPress={() => handleEpisodePress(item)}
-                        style={styles.episodeInfoTouchable}
-                      >
-                        <View style={styles.episodeHeader}>
-                          <Text style={styles.episodeNumber}>Episode {item.episode_number}</Text>
-                          {item.vote_average && item.vote_average > 0 && (
-                            <View style={styles.episodeRatingContainer}>
-                              <Text style={styles.episodeRatingIcon}>⭐</Text>
-                              <Text style={styles.episodeRating}>
-                                {typeof item.vote_average === 'number' ? item.vote_average.toFixed(1) : 'N/A'}
-                              </Text>
-                            </View>
-                          )}
-                        </View>
-                        <Text style={styles.episodeTitle} numberOfLines={2}>
-                          {item.name || `Episode ${item.episode_number}`}
-                        </Text>
-                        <Text style={styles.episodeOverview} numberOfLines={2}>
-                          {item.overview || 'No description available for this episode.'}
-                        </Text>
-                        <View style={styles.episodeMeta}>
-                          <Text style={styles.episodeRuntime}>
-                            {item.runtime ? `${item.runtime} min` : '~ 45 min'}
-                          </Text>
-                          {item.air_date && (
-                            <Text style={styles.episodeAirDate}>
-                              {new Date(item.air_date).toLocaleDateString()}
-                            </Text>
-                          )}
-                        </View>
-                      </TouchableOpacity>
                     </View>
-                  </View>
-                )}
-                keyExtractor={(item) => item.id.toString()}
-                scrollEnabled={false}
-              />
-            ) : (
-              <Text style={styles.noDataText}>No episodes available</Text>
+                    <View style={styles.episodeInfoTouchable}>
+                      <View style={styles.episodeHeader}>
+                        <Text style={styles.episodeNumber}>
+                          Episode {episode.episode_number}
+                        </Text>
+                        <View style={styles.episodeRatingContainer}>
+                          <Text style={styles.episodeRatingIcon}>⭐</Text>
+                          <Text style={styles.episodeRating}>
+                            {episode.vote_average?.toFixed(1)}
+                          </Text>
+                        </View>
+                      </View>
+                      <Text style={styles.episodeTitle}>{episode.name}</Text>
+                      <Text style={styles.episodeOverview} numberOfLines={2}>
+                        {episode.overview}
+                      </Text>
+                      <View style={styles.episodeMeta}>
+                        <Text style={styles.episodeRuntime}>
+                          {episode.runtime ? `${episode.runtime} min` : ''}
+                        </Text>
+                        <Text style={styles.episodeAirDate}>
+                          {episode.air_date}
+                        </Text>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <Text style={styles.noDataText}>No episodes found for this season.</Text>
+              )
             )}
           </View>
         )}
-        {seriesCredits?.cast && seriesCredits.cast.length > 0 && (
+
+        {/* Cast Section */}
+        {seriesCredits && seriesCredits.cast && seriesCredits.cast.length > 0 && (
           <View style={styles.castSection}>
             <Text style={styles.sectionTitle}>Cast</Text>
-            {seriesCreditsLoading ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="small" color="#e50914" />
-                <Text style={styles.loadingText}>Loading cast...</Text>
-              </View>
-            ) : seriesCreditsError ? (
-              <Text style={styles.errorText}>{seriesCreditsError}</Text>
-            ) : (
-              <FlatList
-                data={seriesCredits.cast.slice(0, 10)}
-                renderItem={({ item }) => (
-                  <TouchableOpacity style={styles.castItem}>
-                    <Image 
-                      source={{ uri: getImageUrl(item.profile_path, 'w185') }} 
-                      style={styles.castImage} 
-                    />
-                    <Text style={styles.castName} numberOfLines={1}>{item.name}</Text>
-                    <Text style={styles.castCharacter} numberOfLines={2}>{item.character}</Text>
-                  </TouchableOpacity>
-                )}
-                keyExtractor={(item) => item.id.toString()}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.castList}
-              />
-            )}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.castList}
+            >
+              {seriesCredits.cast.slice(0, 15).map((cast) => (
+                <View key={cast.id} style={styles.castItem}>
+                  <Image
+                    source={{ uri: getImageUrl(cast.profile_path) }}
+                    style={styles.castImage}
+                  />
+                  <Text style={styles.castName}>{cast.name}</Text>
+                  <Text style={styles.castCharacter}>{cast.character}</Text>
+                </View>
+              ))}
+            </ScrollView>
           </View>
         )}
-        <View style={styles.reviewsSection}>
-          <Text style={styles.sectionTitle}>Reviews</Text>
-          {seriesReviewsLoading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color="#e50914" />
-              <Text style={styles.loadingText}>Loading reviews...</Text>
-            </View>
-          ) : seriesReviewsError ? (
-            <Text style={styles.errorText}>{seriesReviewsError}</Text>
-          ) : seriesReviews && seriesReviews.length > 0 ? (
-            <FlatList
-              data={seriesReviews.slice(0, 3)}
-              renderItem={({ item }) => (
-                <View style={styles.reviewItem}>
-                  <View style={styles.reviewHeader}>
-                    <Text style={styles.reviewAuthor}>{item.author}</Text>
-                    <Text style={styles.reviewRating}>
-                      ⭐ {item.author_details?.rating || 'N/A'}
-                    </Text>
-                  </View>
-                  <Text style={styles.reviewContent} numberOfLines={4}>
-                    {item.content}
-                  </Text>
-                  <Text style={styles.reviewDate}>
-                    {new Date(item.created_at).toLocaleDateString()}
+
+        {/* Reviews Section */}
+        {seriesReviews && seriesReviews.length > 0 && (
+          <View style={styles.reviewsSection}>
+            <Text style={styles.sectionTitle}>Reviews</Text>
+            {seriesReviews.slice(0, 3).map((review) => (
+              <View key={review.id} style={styles.reviewItem}>
+                <View style={styles.reviewHeader}>
+                  <Text style={styles.reviewAuthor}>{review.author}</Text>
+                  <Text style={styles.reviewRating}>
+                    {review.author_details?.rating
+                      ? `⭐ ${review.author_details.rating}`
+                      : ''}
                   </Text>
                 </View>
-              )}
-              keyExtractor={(item) => item.id}
-              scrollEnabled={false}
-            />
-          ) : (
-            <Text style={styles.noDataText}>No reviews available</Text>
-          )}
-        </View>
+                <Text style={styles.reviewContent} numberOfLines={4}>
+                  {review.content}
+                </Text>
+                <Text style={styles.reviewDate}>
+                  {review.created_at?.slice(0, 10)}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Similar Series Section */}
         <View style={styles.similarSection}>
-          <Text style={styles.sectionTitle}>More Like This</Text>
+          <Text style={styles.sectionTitle}>Similar Series</Text>
           {similarSeriesLoading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color="#e50914" />
+            <View style={styles.loadingContainerInline}>
+              <ActivityIndicator size="large" color="#e50914" />
               <Text style={styles.loadingText}>Loading similar series...</Text>
             </View>
           ) : similarSeriesError ? (
-            <Text style={styles.errorText}>{similarSeriesError}</Text>
+            <View style={styles.errorContainerInline}>
+              <Text style={styles.errorText}>{similarSeriesError}</Text>
+              <TouchableOpacity style={styles.retryButton} onPress={fetchSimilarSeries}>
+                <Text style={styles.retryButtonText}>Retry</Text>
+              </TouchableOpacity>
+            </View>
           ) : similarSeries && similarSeries.length > 0 ? (
-            <FlatList
-              data={similarSeries.slice(0, 10)}
-              renderItem={({ item }) => (
-                <TouchableOpacity 
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.similarList}
+            >
+              {similarSeries.slice(0, 10).map((item) => (
+                <TouchableOpacity
+                  key={item.id}
                   style={styles.similarSeriesItem}
                   onPress={() => handleSimilarSeriesPress(item)}
                 >
-                  <Image 
-                    source={{ uri: getImageUrl(item.poster_path, 'w300') }} 
-                    style={styles.similarSeriesImage} 
+                  <Image
+                    source={{ uri: getImageUrl(item.poster_path) }}
+                    style={styles.similarSeriesImage}
                   />
                   <Text style={styles.similarSeriesTitle} numberOfLines={2}>
                     {item.name}
                   </Text>
                   <Text style={styles.similarSeriesRating}>
-                    ⭐ {item.vote_average && typeof item.vote_average === 'number' ? item.vote_average.toFixed(1) : 'NR'}
+                    ⭐ {item.vote_average?.toFixed(1)}
                   </Text>
                 </TouchableOpacity>
-              )}
-              keyExtractor={(item) => item.id.toString()}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.similarList}
-            />
+              ))}
+            </ScrollView>
           ) : (
             <Text style={styles.noDataText}>No similar series found</Text>
           )}
         </View>
+
         <View style={styles.bottomSpacing} />
       </ScrollView>
     </View>
@@ -684,7 +629,7 @@ const SeriesDetail = () => {
 
 const styles = StyleSheet.create({
   container: {
-    
+    flex: 1,
     backgroundColor: '#0d1117',
   },
   loadingContainer: {
@@ -693,10 +638,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  loadingContainerInline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
   loadingText: {
     color: '#8b949e',
     fontSize: 16,
     marginTop: 10,
+    marginLeft: 10,
   },
   errorContainer: {
     flex: 1,
@@ -704,6 +656,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 40,
+  },
+  errorContainerInline: {
+    alignItems: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 20,
   },
   errorText: {
     color: '#8b949e',
@@ -734,34 +691,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 50,
-    paddingBottom: 15,
-    backgroundColor: '#0d1117',
-  },
-  backButtonHeader: {
-    padding: 8,
-  },
-  backIcon: {
-    color: '#ffffff',
-    fontSize: 28,
-    fontWeight: 'bold',
-  },
-  headerTitle: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: 'bold',
-    flex: 1,
-    textAlign: 'center',
-    marginHorizontal: 20,
-  },
-  headerSpacer: {
-    width: 44,
-  },
   scrollView: {
     flex: 1,
   },
@@ -779,7 +708,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    background: 'linear-gradient(transparent, rgba(13, 17, 23, 0.8), #0d1117)',
     padding: 20,
   },
   heroContent: {
@@ -907,7 +835,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  playIcon: {
+  playIconMain: {
     color: '#000000',
     fontSize: 16,
     fontWeight: 'bold',
@@ -921,20 +849,6 @@ const styles = StyleSheet.create({
   secondaryButtons: {
     flexDirection: 'row',
     gap: 12,
-  },
-  playButton: {
-    backgroundColor: '#e50914',
-    paddingHorizontal: 30,
-    paddingVertical: 12,
-    borderRadius: 8,
-    marginRight: 15,
-    flex: 1,
-  },
-  playButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
   },
   watchlistButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
@@ -961,23 +875,6 @@ const styles = StyleSheet.create({
     color: '#e50914',
     fontWeight: 'bold',
   },
-  infoButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  infoButtonText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
   overviewSection: {
     padding: 20,
   },
@@ -997,114 +894,6 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     marginBottom: 20,
   },
-  detailsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  detailCard: {
-    backgroundColor: '#21262d',
-    borderRadius: 12,
-    padding: 15,
-    width: (width - 60) / 2,
-    marginBottom: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#30363d',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 3,
-  },
-  detailIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#e50914',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  detailIconText: {
-    fontSize: 18,
-  },
-  detailLabel: {
-    color: '#8b949e',
-    fontSize: 12,
-    marginBottom: 4,
-    textAlign: 'center',
-  },
-  detailValue: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  productionSection: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  productionCompanyContainer: {
-    backgroundColor: '#21262d',
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 12,
-    width: (width - 60) / 2,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#30363d',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 3,
-  },
-  productionLogo: {
-    width: 60,
-    height: 30,
-    resizeMode: 'contain',
-    marginBottom: 8,
-    backgroundColor: '#ffffff',
-    borderRadius: 4,
-    padding: 4,
-  },
-  productionPlaceholder: {
-    width: 60,
-    height: 30,
-    backgroundColor: '#e50914',
-    borderRadius: 4,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  productionInitial: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  productionCompanyName: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginBottom: 4,
-    lineHeight: 16,
-  },
-  productionCountry: {
-    color: '#8b949e',
-    fontSize: 10,
-    textAlign: 'center',
-    fontStyle: 'italic',
-  },
   seasonsSection: {
     padding: 20,
     paddingTop: 10,
@@ -1114,19 +903,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 5,
-  },
-  viewAllButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#30363d',
-  },
-  viewAllText: {
-    color: '#8b949e',
-    fontSize: 12,
-    fontWeight: '500',
   },
   seasonsList: {
     paddingLeft: 0,
@@ -1230,11 +1006,6 @@ const styles = StyleSheet.create({
     marginLeft: 2,
     fontWeight: 'bold',
   },
-  episodeInfo: {
-    flex: 1,
-    padding: 0,
-    justifyContent: 'flex-start',
-  },
   episodeInfoTouchable: {
     flex: 1,
     padding: 16,
@@ -1284,7 +1055,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     marginBottom: 8,
-    flex: 1,
   },
   episodeMeta: {
     flexDirection: 'row',

@@ -176,7 +176,6 @@ const MovieDetail = () => {
       dispatch(setMovieDetails(data));
       
     } catch (error) {
-      // console.error('🚨 Error fetching movie details:', error);
       dispatch(setMovieDetailsError(`Failed to load movie details: ${error.message}`));
     }
   };
@@ -249,7 +248,6 @@ const MovieDetail = () => {
     }
   };
 
-  // Handle retry
   const handleRetry = () => {
     fetchMovieDetails();
     fetchMovieCredits();
@@ -258,7 +256,6 @@ const MovieDetail = () => {
     fetchMovieVideos();
   };
 
-  // Loading state
   if (movieDetailsLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -269,7 +266,6 @@ const MovieDetail = () => {
     );
   }
 
-  // Error state
   if (movieDetailsError) {
     return (
       <View style={styles.errorContainer}>
@@ -301,7 +297,6 @@ const MovieDetail = () => {
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Hero Section */}
         <View style={styles.heroSection}>
           <Image 
             source={{ 
@@ -333,7 +328,7 @@ const MovieDetail = () => {
                         if (rating && rating > 0) {
                           return rating.toFixed(1);
                         }
-                        return 'NR'; // Not Rated
+                        return 'NR';
                       })()}
                     </Text>
                   </View>
@@ -382,9 +377,7 @@ const MovieDetail = () => {
               </View>
             </View>
             
-            {/* Action Buttons */}
             <View style={styles.actionButtons}>
-              {/* Main Play Button - Netflix Style */}
               <TouchableOpacity style={styles.mainPlayButton} onPress={handlePlayMovie}>
                 <View style={styles.playButtonContent}>
                   <Text style={styles.playIcon}>▶</Text>
@@ -394,7 +387,6 @@ const MovieDetail = () => {
                 </View>
               </TouchableOpacity>
               
-              {/* Secondary Buttons Row */}
               <View style={styles.secondaryButtons}>
                 <TouchableOpacity 
                   style={[
@@ -419,14 +411,12 @@ const MovieDetail = () => {
           </View>
         </View>
 
-        {/* Overview Section */}
         <View style={styles.overviewSection}>
           <Text style={styles.sectionTitle}>Synopsis</Text>
           <Text style={styles.overview}>
             {movie.overview || movieDetails?.overview || 'No overview available.'}
           </Text>
           
-          {/* Movie Details */}
           {movieDetails && (
             <>
               <Text style={styles.sectionTitle}>Movie Information</Text>
@@ -503,7 +493,6 @@ const MovieDetail = () => {
           )}
         </View>
 
-        {/* Cast Section */}
         {movieCredits?.cast && movieCredits.cast.length > 0 && (
           <View style={styles.castSection}>
             <Text style={styles.sectionTitle}>Cast</Text>

@@ -419,8 +419,6 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: 'bold',
   },
-  
-  // Profile Section
   profileSection: {
     paddingHorizontal: 20,
     paddingVertical: 20,
@@ -460,8 +458,6 @@ const styles = StyleSheet.create({
     color: '#8b949e',
     fontSize: 14,
   },
-  
-  // Sections
   sectionHeader: {
     color: '#8b949e',
     fontSize: 13,
@@ -520,8 +516,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     marginLeft: 8,
   },
-
-  // Modal Styles
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
@@ -623,8 +617,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
   },
-
-  // About Modal
   aboutModalContainer: {
     backgroundColor: '#21262d',
     borderRadius: 16,

@@ -9,9 +9,11 @@ import {
   authSuccess,
   clearFormData,
   storeAuthData
-} from "../redux/slices/authSlice"
-import { GoogleAuthProvider, getAuth, signInWithCredential } from '@react-native-firebase/auth';
+} from "../redux/slices/authSlice";
+
+import auth from '@react-native-firebase/auth';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+
 import {
   View,
   Text,
@@ -21,10 +23,10 @@ import {
   StatusBar,
   Animated,
   ScrollView,
-  Alert,  
+  Alert,
 } from 'react-native';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from '@react-native-firebase/auth';
 import { useNavigation } from '@react-navigation/native';
+
 
 GoogleSignin.configure({
   webClientId: '113544695495-p7f1d9h1ri9utpg5s0bec5i48n8hnvg0.apps.googleusercontent.com',
@@ -32,10 +34,9 @@ GoogleSignin.configure({
 
 const LoginScreen = () => {
 
-  const navigation = useNavigation()
+  const navigation = useNavigation();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
-
 
   const dispatch = useDispatch();
   const { 
@@ -45,185 +46,170 @@ const LoginScreen = () => {
     isLoading,
     error,
     isAuthenticated
-  } = useSelector((state) => state.auth)
+  } = useSelector((state) => state.auth);
+
+  const [showPassword, setShowPassword] = React.useState(false);
 
   const handleInputChange = (field, value) => {
-    dispatch(updateFormData({ field, value }))
-  }
+    dispatch(updateFormData({ field, value }));
+  };
+
 
   const validateForm = () => {
     if (!formData.email || !formData.password) {
-      dispatch(authFailure('Please fill in all required fields'));
+      dispatch(authFailure("Please fill in all required fields"));
       return false;
     }
+
     if (isSignUp) {
       if (!formData.username) {
-        dispatch(authFailure('Please enter a username'));
+        dispatch(authFailure("Please enter a username"));
         return false;
       }
 
       if (formData.password !== formData.confirmPassword) {
-        dispatch(authFailure('Passwords do not match'));
+        dispatch(authFailure("Passwords do not match"));
         return false;
       }
 
       if (formData.password.length < 6) {
-        dispatch(authFailure('Password must be at least 6 characters'));
+        dispatch(authFailure("Password must be at least 6 characters"));
         return false;
       }
     }
+
     return true;
   };
 
-  const handleAuthAction = () => {
 
-    if (isSignUp) {
-      signUpTestFn();
-    } else {
-      loginTestFn();
-    }
-  };
 
   async function onGoogleButtonPress() {
     try {
       dispatch(authStart());
-      
-      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-      const signInResult = await GoogleSignin.signIn();
 
-      let idToken = signInResult.data?.idToken;  // 👈 ADD 'let'
-      if (!idToken) {
-        idToken = signInResult.idToken;
-      }
-      if (!idToken) {
-        throw new Error('No ID token found');
-      }
+      await GoogleSignin.hasPlayServices();
+      const { idToken } = await GoogleSignin.signIn();
 
-      const googleCredential = GoogleAuthProvider.credential(signInResult.data.idToken);
-      const result = await signInWithCredential(getAuth(), googleCredential);
-      
+      if (!idToken) throw new Error("No ID token received");
+
+
+      const googleCredential = auth.GoogleAuthProvider.credential(idToken);
+
+ 
+      const result = await auth().signInWithCredential(googleCredential);
+
       dispatch(storeAuthData({
         uid: result.user.uid,
         email: result.user.email,
-        displayName: result.user.displayName,
+        displayName: result.user.displayName
       }));
-      
+
       dispatch(clearFormData());
       
-
-      
     } catch (error) {
-      console.log('Google Sign-in error:', error);
-      dispatch(authFailure(error.message || 'Google sign-in failed'));
+      console.log("Google Sign-in error:", error);
+      dispatch(authFailure(error.message));
     }
   }
 
- 
+
+
   const signUpTestFn = async () => {
     if (!validateForm()) return;
-    
+
     try {
       dispatch(authStart());
-      
-      const result = await createUserWithEmailAndPassword(getAuth(), formData.email, formData.password);
-      
+
+      const result = await auth().createUserWithEmailAndPassword(
+        formData.email,
+        formData.password
+      );
+
       dispatch(storeAuthData({
         uid: result.user.uid,
         email: result.user.email,
         displayName: formData.username,
       }));
 
-       
       dispatch(clearFormData());
-      Alert.alert('Success', 'Account created successfully!');
-      
-      
+      Alert.alert("Success", "Account created successfully!");
+
     } catch (error) {
-      let errorMessage = 'An error occurred';
-      
-      if (error.code === 'auth/email-already-in-use') {
-        errorMessage = 'That email address is already in use!';
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = 'That email address is invalid!';
-      } else if (error.code === 'auth/weak-password') {
-        errorMessage = 'Password is too weak!';
-      }
+      let msg = "An error occurred";
 
-      dispatch(authFailure(errorMessage));
-      Alert.alert('Sign Up Error', errorMessage);
+      if (error.code === "auth/email-already-in-use") msg = "Email already in use!";
+      if (error.code === "auth/invalid-email") msg = "Invalid email!";
+      if (error.code === "auth/weak-password") msg = "Weak password!";
+
+      dispatch(authFailure(msg));
     }
-  }
+  };
 
-  
+
+
   const loginTestFn = async () => {
     if (!validateForm()) return;
-    
+
     try {
       dispatch(authStart());
-      
-      const result = await signInWithEmailAndPassword(getAuth(), formData.email, formData.password);
+
+      const result = await auth().signInWithEmailAndPassword(
+        formData.email,
+        formData.password
+      );
+
       dispatch(storeAuthData({
         uid: result.user.uid,
         email: result.user.email,
         displayName: result.user.displayName,
       }));
 
-       
       dispatch(clearFormData());
-      
 
-      
-
-      
-      
     } catch (error) {
-      let errorMessage = 'An error occurred';
-      console.log(error)
-      
-      if (error.code === 'auth/user-not-found') {
-        errorMessage = 'No user found with this email address!';
-      } else if (error.code === 'auth/wrong-password') {
-        errorMessage = 'Wrong password provided!';
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = 'That email address is invalid!';
-      } else if (error.code === 'auth/user-disabled') {
-        errorMessage = 'User account has been disabled!';
-      }
+      let msg = "Login failed";
 
-      dispatch(authFailure(errorMessage));
-      Alert.alert('Sign In Error', errorMessage);
+      if (error.code === "auth/user-not-found") msg = "User not found!";
+      if (error.code === "auth/wrong-password") msg = "Wrong password!";
+      if (error.code === "auth/invalid-email") msg = "Invalid email!";
+
+      dispatch(authFailure(msg));
     }
-  }
+  };
+
+
+  const handleAuthAction = () => {
+    if (isSignUp) signUpTestFn();
+    else loginTestFn();
+  };
+
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(true);
+    setTimeout(() => setShowPassword(false), 5000);
+  };
+
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 1000,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 800,
-        useNativeDriver: true,
-      }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 800, useNativeDriver: true }),
     ]).start();
   }, []);
 
+
   useEffect(() => {
     if (error) {
-      Alert.alert('Error', error, [
-        { text: 'OK', onPress: () => dispatch(clearError()) }
-      ]);
+      Alert.alert("Error", error, [{ text: "OK", onPress: () => dispatch(clearError()) }]);
     }
   }, [error]);
 
-  
+
   useEffect(() => {
     if (isAuthenticated) {
-      navigation.replace('Bottom');
+      navigation.replace("Bottom");
     }
-  }, [isAuthenticated, navigation]);
+  }, [isAuthenticated]);
 
   return (
     <>
@@ -251,6 +237,7 @@ const LoginScreen = () => {
             <Text style={styles.playIcon}>▶</Text>
           </View>
           <Text style={styles.logoText}>CINEFLIX</Text>
+          <Text style={styles.logoText}>HIihkkkkkkkkkkkkkkkkkkkkk</Text>
         </View>
 
         <Text style={styles.welcomeText}>
@@ -280,7 +267,7 @@ const LoginScreen = () => {
               placeholder="Enter your username"
               placeholderTextColor="#6e7681"
               autoCapitalize="none"
-              value={formData.username}  // 👈 ADD VALUE
+              value={formData.username}
               onChangeText={(value) => handleInputChange('username', value)}
             />
           </View>
@@ -307,11 +294,17 @@ const LoginScreen = () => {
             style={styles.textInput}
             placeholder="Enter your password"
             placeholderTextColor="#6e7681"
-            secureTextEntry={true}
+            secureTextEntry={!showPassword}
             value={formData.password}  
             onChangeText={(value) => handleInputChange('password', value)}
           />
+
+          <TouchableOpacity   onPress={togglePasswordVisibility}><Text style={styles.colour}>show password</Text></TouchableOpacity>
+
+          
+          
         </View>
+        
 
         
         {isSignUp && (
@@ -322,7 +315,7 @@ const LoginScreen = () => {
               placeholder="Confirm your password"
               placeholderTextColor="#6e7681"
               secureTextEntry={true}
-              value={formData.confirmPassword}  // 👈 ADD VALUE
+              value={formData.confirmPassword}
               onChangeText={(value) => handleInputChange('confirmPassword', value)}
             />
           </View>
@@ -381,7 +374,6 @@ const LoginScreen = () => {
         </>
       </Animated.View>
 
-      {/* Footer */}
       <View style={styles.footer}>
         <Text style={styles.footerText}>© 2025 CineFlix Studios</Text>
       </View>
@@ -409,6 +401,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 30,
   },
+  colour: {
+    color: '#e50914',
+  },
+
   logoIcon: {
     width: 80,
     height: 80,
@@ -485,6 +481,8 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     marginBottom: 20,
+    display: 'flex',
+    flex:"row"
   },
   inputLabel: {
     fontSize: 16,

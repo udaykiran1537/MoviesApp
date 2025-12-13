@@ -75,23 +75,26 @@ const SeriesScreen = () => {
 
   const handleSeriesWishlistToggle = (series, event) => {
     event.stopPropagation();
-    let posterPath = series.poster_path;
-    if (!posterPath && series.image && series.image.includes('image.tmdb.org')) {
+    
+    let posterPath = null;
+    if (series.image && series.image.includes('image.tmdb.org')) {
       const urlParts = series.image.split('/');
       const filename = urlParts[urlParts.length - 1];
       posterPath = '/' + filename;
     }
+    
     const seriesData = {
       id: series.id,
       name: series.title,
       title: series.title,
       image: series.image,
       poster_path: posterPath,
-      overview: series.overview,
-      first_air_date: series.firstAirDate,
+      overview: series.overview || '',
+      first_air_date: series.firstAirDate || '',
       vote_average: parseFloat(series.rating) || 0,
       type: 'series'
     };
+    
     dispatch(toggleSeriesInWishlist(seriesData));
     dispatch(saveWishlistToStorage());
   };
@@ -144,6 +147,8 @@ const SeriesScreen = () => {
         id: show.id,
         title: show.name,
         image: getImageUrl(show.poster_path),
+        poster_path: show.poster_path,
+        backdrop_path: show.backdrop_path,
         rating: show.vote_average?.toFixed(1),
         overview: show.overview,
         firstAirDate: show.first_air_date,
@@ -166,6 +171,8 @@ const SeriesScreen = () => {
         id: show.id,
         title: show.name,
         image: getImageUrl(show.poster_path),
+        poster_path: show.poster_path,
+        backdrop_path: show.backdrop_path,
         rating: show.vote_average?.toFixed(1),
         overview: show.overview,
         firstAirDate: show.first_air_date,
@@ -188,6 +195,8 @@ const SeriesScreen = () => {
         id: show.id,
         title: show.name,
         image: getImageUrl(show.poster_path),
+        poster_path: show.poster_path,
+        backdrop_path: show.backdrop_path,
         rating: show.vote_average?.toFixed(1),
         overview: show.overview,
         firstAirDate: show.first_air_date,
@@ -210,6 +219,8 @@ const SeriesScreen = () => {
         id: show.id,
         title: show.name,
         image: getImageUrl(show.poster_path),
+        poster_path: show.poster_path,
+        backdrop_path: show.backdrop_path,
         rating: show.vote_average?.toFixed(1),
         overview: show.overview,
         firstAirDate: show.first_air_date,
@@ -239,20 +250,20 @@ const SeriesScreen = () => {
     ]).start();
   }, []);
 
- 
-
   const handleSeriesPress = (series) => {
+    // Debug log
+    console.log('Navigating to series:', series);
+    
     navigation.navigate('SeriesDetail', { 
       series: {
         id: series.id,
         name: series.title || series.name,
-        overview: series.overview,
-        poster_path: series.poster_path,
-        backdrop_path: series.backdrop_path,
-        vote_average: typeof series.vote_average === 'number' ? series.vote_average : 
-                     (typeof series.rating === 'string' ? parseFloat(series.rating) : 0),
-        first_air_date: series.first_air_date || series.firstAirDate,
-        
+        overview: series.overview || '',
+        poster_path: series.poster_path || null,
+        backdrop_path: series.backdrop_path || null,
+        vote_average: typeof series.rating === 'string' ? parseFloat(series.rating) : (series.rating || 0),
+        first_air_date: series.firstAirDate || '',
+        image: series.image
       }
     });
   };
@@ -275,10 +286,12 @@ const SeriesScreen = () => {
             </Text>
           </TouchableOpacity>
         </View>
-        <Text style={styles.seriesTitle} numberOfLines={2}>
-          {item.title}
-        </Text>
-        <Text style={styles.seriesRating}>⭐ {item.rating}</Text>
+        <View>
+          <Text style={styles.seriesTitle} numberOfLines={2}>
+            {item.title}
+          </Text>
+          <Text style={styles.seriesRating}>⭐ {item.rating}</Text>
+        </View>
       </TouchableOpacity>
     );
   };
@@ -433,7 +446,7 @@ const SeriesScreen = () => {
             <FlatList
               data={onTheAirTvSeries}
               renderItem={renderSeriesItem}
-              keyExtractor={(item) => item.id.toString()}
+              keyExtractor={(item) => item?.id?.toString()}
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.seriesList}
@@ -446,9 +459,6 @@ const SeriesScreen = () => {
     </View>
   );
 };
-
-
-
 
 const styles = StyleSheet.create({
   container: {

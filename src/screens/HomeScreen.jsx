@@ -17,6 +17,7 @@ import {
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../redux/slices/authSlice';
 import { useNavigation } from '@react-navigation/native';
+import { toggleDarkMode } from '../redux/slices/themeSlice';
 import { 
   setNowPlayingLoading,
   setNowPlayingMovies,
@@ -34,6 +35,7 @@ import {
   setUpcomingMovies,
   setUpcomingError,
   clearUpcomingError,
+ 
 } from '../redux/slices/movieSlice';
 import { tmdbService, getImageUrl } from '../services/tmdbService';
 import { 
@@ -41,12 +43,13 @@ import {
   saveWishlistToStorage 
 } from '../redux/slices/wishlistSlice';
 
-const { width, height } = Dimensions.get('window');
+const { height } = Dimensions.get('window');
 
 const HomeScreen = () => {
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const { user } = useSelector((state) => state.auth);
+  const {isDarkMode} = useSelector((state) => state.theme);
   
   const {
     featuredMovie,
@@ -240,16 +243,6 @@ const HomeScreen = () => {
     ]).start();
   }, []);
 
-  const handleLogout = () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Logout', onPress: () => dispatch(logout()) },
-      ]
-    );
-  };
 
   const handleMoviePress = (movie) => {
     navigation.navigate('MovieDetail', { 
@@ -290,7 +283,7 @@ const HomeScreen = () => {
             </Text>
           </TouchableOpacity>
         </View>
-        <Text style={styles.movieTitle} numberOfLines={2}>
+        <Text style={isDarkMode ? styles.movieTitle : styles.lightmovieTitle} numberOfLines={2}>
           {item.title}
         </Text>
         <Text style={styles.movieRating}>⭐ {item.rating}</Text>
@@ -299,11 +292,22 @@ const HomeScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={isDarkMode ? styles.container : styles.lightcontainer}>
       <StatusBar barStyle="light-content" translucent backgroundColor="#000" />
-      <Animated.View style={[styles.navbar, { opacity: fadeAnim }]}>
+      <Animated.View style={[isDarkMode ? styles.navbar : styles.lightnavbar, { opacity: fadeAnim }]}>
         <View style={styles.navContent}>
           <Text style={styles.logo}>CINEFLIX</Text>
+          <View style={{flexDirection:'row', alignItems:'center'}}>
+          
+           
+          
+          <TouchableOpacity onPress={() => dispatch(toggleDarkMode())}>
+            <Text style={{color: '#fff', fontSize: 20}}>{isDarkMode ? '🌙' : '☀️'}</Text>
+          </TouchableOpacity>
+          <Image source={require('../assets/chatbot.png')} style={styles.profileImage} />
+          </View>
+          
+          
         </View>
       </Animated.View>
       <ScrollView 
@@ -343,7 +347,7 @@ const HomeScreen = () => {
   function renderSection(title, movies, loading, error, retryFn, renderItem) {
     return (
       <Animated.View style={styles.nowPlayingSection}>
-        <Text style={styles.sectionTitle}>{title}</Text>
+        <Text style={isDarkMode ? styles.sectionTitle : styles.lightsectionTitle}>{title}</Text>
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#e50914" />
@@ -374,24 +378,40 @@ const HomeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0d1117',
+    backgroundColor: '#080808ff',
+  },
+  lightcontainer: {
+    flex: 1,
+    backgroundColor: '#fcfbfbff',
   },
   navbar: {
-    top: 0,
+    top: 10,
     left: 0,
     right: 0,
     paddingHorizontal: 20,
     marginTop:10,
-    backgroundColor: 'rgba(13, 17, 23, 0.9)',
+    backgroundColor: 'rgba(9, 9, 9, 0.9)',
+    zIndex: 1000,
+  },
+   lightnavbar: {
+    top: 10,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 20,
+    marginTop:10,
+    backgroundColor: 'rgba(255, 255, 255, 1)',
     zIndex: 1000,
   },
   navContent: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 20,
   },
   logo: {
-    fontSize: 50,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#e50914',
     letterSpacing: 3,
@@ -455,7 +475,14 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#fefdfdff',
+    marginBottom: 20,
+    paddingHorizontal: 20,
+  },
+  lightsectionTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#000000ff',
     marginBottom: 20,
     paddingHorizontal: 20,
   },
@@ -531,6 +558,14 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     lineHeight: 16,
   },
+   lightmovieTitle: {
+    fontSize: 12,
+    color: '#000000ff',
+    marginTop: 8,
+    textAlign: 'center',
+    fontWeight: '500',
+    lineHeight: 16,
+  },
   movieRating: {
     fontSize: 11,
     color: '#8b949e',
@@ -539,6 +574,13 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 10,
+  },
+  profileImage: {
+    width: 30,
+    height:  40,
+    borderRadius:  20,
+    marginLeft: 25,
+    
   },
 });
 
