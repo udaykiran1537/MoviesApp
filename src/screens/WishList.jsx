@@ -30,17 +30,12 @@ import {
   selectWishlistSeriesCount,
 } from '../redux/slices/wishlistSlice';
 
+
 const { width, height } = Dimensions.get('window');
 
 const WishList = () => {
   const dispatch = useDispatch();
   const navigation = useNavigation();
-
-  useEffect(() => {
-    if (user?.uid) {
-      dispatch(loadWishlistFromStorage(user.uid));
-    }
-  }, [user?.uid]);
 
   const {
     wishlistMovies,
@@ -48,11 +43,17 @@ const WishList = () => {
     isLoading,
     wishlistError,
   } = useSelector((state) => state.wishlist);
-
   const totalCount = useSelector(selectTotalWishlistCount);
   const moviesCount = useSelector(selectWishlistMoviesCount);
   const seriesCount = useSelector(selectWishlistSeriesCount);
   const { user } = useSelector((state) => state.auth);
+  const { isDarkMode } = useSelector(state => state.theme);
+
+  useEffect(() => {
+    if (user?.uid) {
+      dispatch(loadWishlistFromStorage(user.uid));
+    }
+  }, [user?.uid, dispatch]);
 
   const [activeTab, setActiveTab] = useState('all');
   const [sortBy, setSortBy] = useState('addedAt');
@@ -74,9 +75,9 @@ const WishList = () => {
               dispatch(removeSeriesFromWishlist(item.id));
             }
             dispatch(saveWishlistToStorage(user?.uid));
-          }
-        }
-      ]
+          },
+        },
+      ],
     );
   };
 
@@ -93,9 +94,9 @@ const WishList = () => {
           onPress: () => {
             dispatch(clearWishlist());
             dispatch(saveWishlistToStorage(user?.uid));
-          }
-        }
-      ]
+          },
+        },
+      ],
     );
   };
 
@@ -104,7 +105,9 @@ const WishList = () => {
     if (count === 0) return;
     Alert.alert(
       `Clear ${type === 'movies' ? 'Movies' : 'TV Shows'}`,
-      `Remove all ${count} ${type === 'movies' ? 'movies' : 'TV shows'} from your list?`,
+      `Remove all ${count} ${
+        type === 'movies' ? 'movies' : 'TV shows'
+      } from your list?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -117,9 +120,9 @@ const WishList = () => {
               dispatch(clearSeriesWishlist());
             }
             dispatch(saveWishlistToStorage(user?.uid));
-          }
-        }
-      ]
+          },
+        },
+      ],
     );
   };
 
@@ -145,7 +148,7 @@ const WishList = () => {
           overview: item.overview,
           release_date: item.release_date,
           vote_average: item.vote_average,
-        }
+        },
       });
     } else {
       navigation.navigate('SeriesDetail', {
@@ -157,7 +160,7 @@ const WishList = () => {
           overview: item.overview,
           first_air_date: item.first_air_date,
           vote_average: item.vote_average,
-        }
+        },
       });
     }
   };
@@ -171,10 +174,11 @@ const WishList = () => {
       default:
         return [...wishlistMovies, ...wishlistSeries].sort((a, b) => {
           switch (sortBy) {
-            case 'title':
+            case 'title': {
               const titleA = (a.title || a.name || '').toLowerCase();
               const titleB = (b.title || b.name || '').toLowerCase();
               return titleA.localeCompare(titleB);
+            }
             case 'rating':
               return (b.vote_average || 0) - (a.vote_average || 0);
             default:
@@ -186,9 +190,10 @@ const WishList = () => {
 
   const renderWishlistItem = ({ item }) => {
     const title = item.title || item.name;
-    const subtitle = item.type === 'movie' || item.title ? 
-      item.release_date?.split('-')[0] : 
-      item.first_air_date?.split('-')[0];
+    const subtitle =
+      item.type === 'movie' || item.title
+        ? item.release_date?.split('-')[0]
+        : item.first_air_date?.split('-')[0];
 
     const getWishlistImageUrl = () => {
       if (item.image && item.image.includes('image.tmdb.org')) {
@@ -206,34 +211,53 @@ const WishList = () => {
     const imageUrl = getWishlistImageUrl();
 
     return (
-      <TouchableOpacity 
-        style={styles.wishlistItem}
+      <TouchableOpacity
+        style={[
+          styles.wishlistItem,
+          !isDarkMode && styles.lightWishlistItem,
+        ]}
         onPress={() => handleItemPress(item)}
         activeOpacity={0.7}
       >
         {imageUrl ? (
-          <Image 
+          <Image
             source={{ uri: imageUrl }}
             style={styles.itemImage}
-            onError={() => {}}
-            onLoad={() => {}}
           />
         ) : (
-          <View style={[styles.itemImage, styles.placeholderImage]}>
+          <View
+            style={[styles.itemImage, styles.placeholderImage]}
+          >
             <Text style={styles.placeholderText}>
               {item.type === 'movie' || item.title ? '🎬' : '📺'}
             </Text>
-            <Text style={styles.placeholderTitle} numberOfLines={2}>
+            <Text
+              style={styles.placeholderTitle}
+              numberOfLines={2}
+            >
               {title}
             </Text>
           </View>
         )}
         <View style={styles.itemInfo}>
-          <Text style={styles.itemTitle} numberOfLines={2}>
+          <Text
+            style={[
+              styles.itemTitle,
+              !isDarkMode && styles.lightItemTitle,
+            ]}
+            numberOfLines={2}
+          >
             {title}
           </Text>
           {subtitle && (
-            <Text style={styles.itemSubtitle}>{subtitle}</Text>
+            <Text
+              style={[
+                styles.itemSubtitle,
+                !isDarkMode && styles.lightItemSubtitle,
+              ]}
+            >
+              {subtitle}
+            </Text>
           )}
           {item.vote_average > 0 && (
             <Text style={styles.itemRating}>
@@ -241,7 +265,13 @@ const WishList = () => {
             </Text>
           )}
           {item.overview && (
-            <Text style={styles.itemOverview} numberOfLines={3}>
+            <Text
+              style={[
+                styles.itemOverview,
+                !isDarkMode && styles.lightItemOverview,
+              ]}
+              numberOfLines={3}
+            >
               {item.overview}
             </Text>
           )}
@@ -278,14 +308,24 @@ const WishList = () => {
               key={tab.key}
               style={[
                 styles.tab,
-                activeTab === tab.key && styles.activeTab
+                activeTab === tab.key && styles.activeTab,
+                !isDarkMode && styles.lightTab,
+                !isDarkMode &&
+                  activeTab === tab.key &&
+                  styles.lightActiveTab,
               ]}
               onPress={() => setActiveTab(tab.key)}
             >
-              <Text style={[
-                styles.tabText,
-                activeTab === tab.key && styles.activeTabText
-              ]}>
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === tab.key && styles.activeTabText,
+                  !isDarkMode && styles.lightTabText,
+                  !isDarkMode &&
+                    activeTab === tab.key &&
+                    styles.lightActiveTabText,
+                ]}
+              >
                 {tab.label}
               </Text>
             </TouchableOpacity>
@@ -303,21 +343,39 @@ const WishList = () => {
     ];
     return (
       <View style={styles.sortContainer}>
-        <Text style={styles.sortLabel}>Sort by:</Text>
+        <Text
+          style={[
+            styles.sortLabel,
+            !isDarkMode && styles.lightSortLabel,
+          ]}
+        >
+          Sort by:
+        </Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           {sortOptions.map((option) => (
             <TouchableOpacity
               key={option.key}
               style={[
                 styles.sortOption,
-                sortBy === option.key && styles.activeSortOption
+                sortBy === option.key && styles.activeSortOption,
+                !isDarkMode && styles.lightSortOption,
+                !isDarkMode &&
+                  sortBy === option.key &&
+                  styles.lightActiveSortOption,
               ]}
               onPress={() => handleSortChange(option.key)}
             >
-              <Text style={[
-                styles.sortOptionText,
-                sortBy === option.key && styles.activeSortOptionText
-              ]}>
+              <Text
+                style={[
+                  styles.sortOptionText,
+                  sortBy === option.key &&
+                    styles.activeSortOptionText,
+                  !isDarkMode && styles.lightSortOptionText,
+                  !isDarkMode &&
+                    sortBy === option.key &&
+                    styles.lightActiveSortOptionText,
+                ]}
+              >
                 {option.label}
               </Text>
             </TouchableOpacity>
@@ -330,16 +388,27 @@ const WishList = () => {
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyIcon}>📚</Text>
-      <Text style={styles.emptyTitle}>Your list is empty</Text>
-      <Text style={styles.emptySubtitle}>
-        {activeTab === 'all' 
+      <Text
+        style={[
+          styles.emptyTitle,
+          !isDarkMode && styles.lightEmptyTitle,
+        ]}
+      >
+        Your list is empty
+      </Text>
+      <Text
+        style={[
+          styles.emptySubtitle,
+          !isDarkMode && styles.lightEmptySubtitle,
+        ]}
+      >
+        {activeTab === 'all'
           ? 'Add movies and TV shows to your list to watch later'
           : activeTab === 'movies'
           ? 'No movies in your list yet'
-          : 'No TV shows in your list yet'
-        }
+          : 'No TV shows in your list yet'}
       </Text>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.browseButton}
         onPress={() => navigation.navigate('home')}
       >
@@ -350,11 +419,21 @@ const WishList = () => {
 
   if (isLoading) {
     return (
-      <View style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#0d1117" />
+      <View
+        style={[
+          styles.container,
+          !isDarkMode && styles.lightContainer,
+        ]}
+      >
+        <StatusBar
+          barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+          backgroundColor={isDarkMode ? '#0d1117' : '#fcfbfbff'}
+        />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#e50914" />
-          <Text style={styles.loadingText}>Loading your list...</Text>
+          <Text style={styles.loadingText}>
+            Loading your list...
+          </Text>
         </View>
       </View>
     );
@@ -363,13 +442,31 @@ const WishList = () => {
   const filteredData = getFilteredData();
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#0d1117" />
+    <View
+      style={[
+        styles.container,
+        !isDarkMode && styles.lightContainer,
+      ]}
+    >
+      <StatusBar
+        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+        backgroundColor={isDarkMode ? '#0d1117' : '#fcfbfbff'}
+      />
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>My List</Text>
+        <Text
+          style={[
+            styles.headerTitle,
+            !isDarkMode && styles.lightHeaderTitle,
+          ]}
+        >
+          My List
+        </Text>
         {totalCount > 0 && (
           <TouchableOpacity
-            style={styles.clearAllButton}
+            style={[
+              styles.clearAllButton,
+              !isDarkMode && styles.lightClearAllButton,
+            ]}
             onPress={handleClearAll}
           >
             <Text style={styles.clearAllText}>Clear All</Text>
@@ -383,11 +480,15 @@ const WishList = () => {
           {activeTab !== 'all' && (
             <View style={styles.clearTypeContainer}>
               <TouchableOpacity
-                style={styles.clearTypeButton}
+                style={[
+                  styles.clearTypeButton,
+                  !isDarkMode && styles.lightClearTypeButton,
+                ]}
                 onPress={() => handleClearByType(activeTab)}
               >
                 <Text style={styles.clearTypeText}>
-                  Clear {activeTab === 'movies' ? 'Movies' : 'TV Shows'}
+                  Clear{' '}
+                  {activeTab === 'movies' ? 'Movies' : 'TV Shows'}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -400,7 +501,9 @@ const WishList = () => {
         <FlatList
           data={filteredData}
           renderItem={renderWishlistItem}
-          keyExtractor={(item, index) => `${item.id}-${item.type}-${index}`}
+          keyExtractor={(item, index) =>
+            `${item.id}-${item.type}-${index}`
+          }
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContainer}
           refreshControl={
@@ -416,23 +519,29 @@ const WishList = () => {
   );
 };
 
-
-
 const styles = StyleSheet.create({
+  // base dark
   container: {
     flex: 1,
     backgroundColor: '#0d1117',
   },
+  lightContainer: {
+    flex: 1,
+    backgroundColor: '#fcfbfbff',
+  },
+
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
+
   loadingText: {
     color: '#8b949e',
     marginTop: 16,
     fontSize: 16,
   },
+
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -441,11 +550,16 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 12,
   },
+
   headerTitle: {
     fontSize: 28,
     fontWeight: 'bold',
     color: '#f0f6fc',
   },
+  lightHeaderTitle: {
+    color: '#111827',
+  },
+
   clearAllButton: {
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -454,15 +568,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e50914',
   },
+  lightClearAllButton: {
+    backgroundColor: '#fee2e2',
+  },
+
   clearAllText: {
     color: '#e50914',
     fontSize: 14,
     fontWeight: '500',
   },
+
   tabsContainer: {
     paddingHorizontal: 16,
     marginBottom: 12,
   },
+
   tab: {
     paddingHorizontal: 16,
     paddingVertical: 8,
@@ -472,29 +592,52 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#30363d',
   },
+  lightTab: {
+    backgroundColor: '#e5e7eb',
+    borderColor: '#e5e7eb',
+  },
+
   activeTab: {
     backgroundColor: '#e50914',
     borderColor: '#e50914',
   },
+  lightActiveTab: {
+    backgroundColor: '#e50914',
+    borderColor: '#e50914',
+  },
+
   tabText: {
     color: '#8b949e',
     fontSize: 14,
     fontWeight: '500',
   },
+  lightTabText: {
+    color: '#4b5563',
+  },
+
   activeTabText: {
     color: '#ffffff',
   },
+  lightActiveTabText: {
+    color: '#ffffff',
+  },
+
   sortContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     marginBottom: 12,
   },
+
   sortLabel: {
     color: '#8b949e',
     fontSize: 14,
     marginRight: 12,
   },
+  lightSortLabel: {
+    color: '#6b7280',
+  },
+
   sortOption: {
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -502,20 +645,37 @@ const styles = StyleSheet.create({
     backgroundColor: '#30363d',
     marginRight: 8,
   },
+  lightSortOption: {
+    backgroundColor: '#e5e7eb',
+  },
+
   activeSortOption: {
     backgroundColor: '#e50914',
   },
+  lightActiveSortOption: {
+    backgroundColor: '#e50914',
+  },
+
   sortOptionText: {
     color: '#8b949e',
     fontSize: 12,
   },
+  lightSortOptionText: {
+    color: '#4b5563',
+  },
+
   activeSortOptionText: {
     color: '#ffffff',
   },
+  lightActiveSortOptionText: {
+    color: '#ffffff',
+  },
+
   clearTypeContainer: {
     paddingHorizontal: 16,
     marginBottom: 12,
   },
+
   clearTypeButton: {
     alignSelf: 'flex-start',
     paddingHorizontal: 12,
@@ -525,15 +685,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e50914',
   },
+  lightClearTypeButton: {
+    backgroundColor: '#fee2e2',
+  },
+
   clearTypeText: {
     color: '#e50914',
     fontSize: 12,
     fontWeight: '500',
   },
+
   listContainer: {
     paddingHorizontal: 16,
     paddingBottom: 20,
   },
+
   wishlistItem: {
     flexDirection: 'row',
     marginBottom: 16,
@@ -544,60 +710,84 @@ const styles = StyleSheet.create({
     borderColor: '#30363d',
     position: 'relative',
   },
+  lightWishlistItem: {
+    backgroundColor: '#ffffff',
+    borderColor: '#e5e7eb',
+  },
+
   itemImage: {
     width: 80,
     height: 120,
     borderRadius: 8,
     backgroundColor: '#30363d',
   },
+
   placeholderImage: {
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#30363d',
   },
+
   placeholderText: {
     fontSize: 24,
     color: '#8b949e',
     marginBottom: 4,
   },
+
   placeholderTitle: {
     fontSize: 10,
     color: '#6e7681',
     textAlign: 'center',
     paddingHorizontal: 4,
   },
+
   itemInfo: {
     flex: 1,
     marginLeft: 12,
     justifyContent: 'flex-start',
   },
+
   itemTitle: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#f0f6fc',
     marginBottom: 4,
   },
+  lightItemTitle: {
+    color: '#111827',
+  },
+
   itemSubtitle: {
     fontSize: 14,
     color: '#8b949e',
     marginBottom: 4,
   },
+  lightItemSubtitle: {
+    color: '#6b7280',
+  },
+
   itemRating: {
     fontSize: 14,
     color: '#ffd700',
     marginBottom: 6,
   },
+
   itemOverview: {
     fontSize: 13,
     color: '#8b949e',
     lineHeight: 18,
     marginBottom: 8,
   },
+  lightItemOverview: {
+    color: '#4b5563',
+  },
+
   itemMeta: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+
   mediaType: {
     fontSize: 12,
     color: '#e50914',
@@ -607,10 +797,12 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     overflow: 'hidden',
   },
+
   addedDate: {
     fontSize: 11,
     color: '#6e7681',
   },
+
   removeButton: {
     position: 'absolute',
     top: 8,
@@ -622,21 +814,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+
   removeButtonText: {
     color: '#ffffff',
     fontSize: 18,
     fontWeight: 'bold',
   },
+
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 32,
   },
+
   emptyIcon: {
     fontSize: 64,
     marginBottom: 16,
   },
+
   emptyTitle: {
     fontSize: 24,
     fontWeight: 'bold',
@@ -644,6 +840,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     textAlign: 'center',
   },
+  lightEmptyTitle: {
+    color: '#111827',
+  },
+
   emptySubtitle: {
     fontSize: 16,
     color: '#8b949e',
@@ -651,12 +851,17 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     marginBottom: 24,
   },
+  lightEmptySubtitle: {
+    color: '#6b7280',
+  },
+
   browseButton: {
     backgroundColor: '#e50914',
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
   },
+
   browseButtonText: {
     color: '#ffffff',
     fontSize: 16,

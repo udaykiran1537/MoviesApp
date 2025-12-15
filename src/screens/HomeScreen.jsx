@@ -15,7 +15,7 @@ import {
   Linking,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { logout } from '../redux/slices/authSlice';
+
 import { useNavigation } from '@react-navigation/native';
 import { toggleDarkMode } from '../redux/slices/themeSlice';
 import { 
@@ -304,7 +304,9 @@ const HomeScreen = () => {
           <TouchableOpacity onPress={() => dispatch(toggleDarkMode())}>
             <Text style={{color: '#fff', fontSize: 20}}>{isDarkMode ? '🌙' : '☀️'}</Text>
           </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('Chatbot')}>
           <Image source={require('../assets/chatbot.png')} style={styles.profileImage} />
+          </TouchableOpacity>
           </View>
           
           

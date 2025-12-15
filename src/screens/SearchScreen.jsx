@@ -32,12 +32,13 @@ import {
   incrementPage,
 } from '../redux/slices/searchSlice';
 
+
 const { width, height } = Dimensions.get('window');
 
 const SearchScreen = () => {
   const dispatch = useDispatch();
   const navigation = useNavigation();
-  
+
   const {
     searchQuery,
     searchResults,
@@ -51,61 +52,67 @@ const SearchScreen = () => {
     trendingSearches,
   } = useSelector((state) => state.search);
 
+ const{isDarkMode} = useSelector(state => state.theme);
+
   const [searchTimeout, setSearchTimeout] = useState(null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [defaultContent, setDefaultContent] = useState([]);
   const [defaultLoading, setDefaultLoading] = useState(false);
 
-  const performSearch = useCallback(async (query, page = 1) => {
-    if (!query.trim()) {
-      dispatch(clearSearchResults());
-      return;
-    }
+  const performSearch = useCallback(
+    async (query, page = 1) => {
+      if (!query.trim()) {
+        dispatch(clearSearchResults());
+        return;
+      }
 
-    try {
-      dispatch(setSearchLoading(true));
-      dispatch(clearSearchError());
-      
-      let searchData;
-      
-      switch (searchType) {
-        case 'movie':
-          searchData = await tmdbService.searchMovies(query, page);
-          break;
-        case 'tv':
-          searchData = await tmdbService.searchTvShows(query, page);
-          break;
-        case 'person':
-          searchData = await tmdbService.searchPeople(query, page);
-          break;
-        default:
-          searchData = await tmdbService.searchMulti(query, page);
-          break;
+      try {
+        dispatch(setSearchLoading(true));
+        dispatch(clearSearchError());
+
+        let searchData;
+
+        switch (searchType) {
+          case 'movie':
+            searchData = await tmdbService.searchMovies(query, page);
+            break;
+          case 'tv':
+            searchData = await tmdbService.searchTvShows(query, page);
+            break;
+          case 'person':
+            searchData = await tmdbService.searchPeople(query, page);
+            break;
+          default:
+            searchData = await tmdbService.searchMulti(query, page);
+            break;
+        }
+
+        dispatch(
+          setSearchResults({
+            results: searchData.results,
+            page: searchData.page,
+            total_pages: searchData.total_pages,
+            total_results: searchData.total_results,
+          }),
+        );
+
+        if (page === 1) {
+          dispatch(addRecentSearch(query));
+        }
+      } catch (error) {
+        dispatch(setSearchError(`Search failed: ${error.message}`));
+        Alert.alert('Search Error', 'Failed to search. Please try again.');
       }
-      
-      dispatch(setSearchResults({
-        results: searchData.results,
-        page: searchData.page,
-        total_pages: searchData.total_pages,
-        total_results: searchData.total_results,
-      }));
-      
-      if (page === 1) {
-        dispatch(addRecentSearch(query));
-      }
-      
-    } catch (error) {
-      dispatch(setSearchError(`Search failed: ${error.message}`));
-      Alert.alert('Search Error', 'Failed to search. Please try again.');
-    }
-  }, [searchType, dispatch]);
+    },
+    [searchType, dispatch],
+  );
 
   const loadDefaultContent = useCallback(async (type) => {
     try {
       setDefaultLoading(true);
-      
+
       let data;
-      
+
       switch (type) {
         case 'movie':
           data = await tmdbService.getPopular();
@@ -120,20 +127,26 @@ const SearchScreen = () => {
           try {
             const [moviesData, tvData] = await Promise.all([
               tmdbService.getPopular(),
-              tmdbService.getPopularTv()
+              tmdbService.getPopularTv(),
             ]);
             const combinedResults = [
-              ...moviesData.results.slice(0, 10).map(item => ({ ...item, media_type: 'movie' })),
-              ...tvData.results.slice(0, 10).map(item => ({ ...item, media_type: 'tv' }))
+              ...moviesData.results
+                .slice(0, 10)
+                .map((item) => ({ ...item, media_type: 'movie' })),
+              ...tvData.results
+                .slice(0, 10)
+                .map((item) => ({ ...item, media_type: 'tv' })),
             ];
-            const shuffled = combinedResults.sort(() => Math.random() - 0.5);
+            const shuffled = combinedResults.sort(
+              () => Math.random() - 0.5,
+            );
             data = { results: shuffled };
           } catch (error) {
             data = await tmdbService.getPopular();
           }
           break;
       }
-      
+
       setDefaultContent(data.results || []);
     } catch (error) {
       setDefaultContent([]);
@@ -146,11 +159,11 @@ const SearchScreen = () => {
     if (searchQuery.trim() === '') {
       loadDefaultContent(searchType);
     }
-  }, [searchType, loadDefaultContent]);
+  }, [searchType, loadDefaultContent, searchQuery]);
 
   useEffect(() => {
     loadDefaultContent('all');
-  }, []);
+  }, [loadDefaultContent]);
 
   const handleSearchChange = (text) => {
     dispatch(setSearchQuery(text));
@@ -203,7 +216,7 @@ const SearchScreen = () => {
           overview: item.overview,
           release_date: item.release_date,
           vote_average: item.vote_average,
-        }
+        },
       });
     } else if (item.media_type === 'tv' || (!item.media_type && item.name)) {
       navigation.navigate('SeriesDetail', {
@@ -215,57 +228,90 @@ const SearchScreen = () => {
           overview: item.overview,
           first_air_date: item.first_air_date,
           vote_average: item.vote_average,
-        }
+        },
       });
     } else if (item.media_type === 'person') {
       Alert.alert(
         item.name,
-        `Known for: ${item.known_for_department}\nPopularity: ${item.popularity.toFixed(1)}`,
+        `Known for: ${item.known_for_department}\nPopularity: ${item.popularity.toFixed(
+          1,
+        )}`,
         [
-          { text: 'Search on Google', onPress: () => {
-            const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(item.name + ' actor')}`;
-            Linking.openURL(searchUrl);
-          }},
-          { text: 'OK', style: 'cancel' }
-        ]
+          {
+            text: 'Search on Google',
+            onPress: () => {
+              const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(
+                item.name + ' actor',
+              )}`;
+              Linking.openURL(searchUrl);
+            },
+          },
+          { text: 'OK', style: 'cancel' },
+        ],
       );
     }
   };
 
   const renderSearchResult = ({ item }) => {
-    const isMovie = item.media_type === 'movie' || 
-                   (!item.media_type && item.title) || 
-                   (searchType === 'movie' && !item.media_type);
-    const isTv = item.media_type === 'tv' || 
-                (!item.media_type && item.name) || 
-                (searchType === 'tv' && !item.media_type);
-    const isPerson = item.media_type === 'person' || 
-                    (searchType === 'person' && !item.media_type);
-    
+    const isMovie =
+      item.media_type === 'movie' ||
+      (!item.media_type && item.title) ||
+      (searchType === 'movie' && !item.media_type);
+    const isTv =
+      item.media_type === 'tv' ||
+      (!item.media_type && item.name) ||
+      (searchType === 'tv' && !item.media_type);
+    const isPerson =
+      item.media_type === 'person' ||
+      (searchType === 'person' && !item.media_type);
+
     const title = item.title || item.name;
-    const subtitle = isMovie ? item.release_date?.split('-')[0] : 
-                    isTv ? item.first_air_date?.split('-')[0] :
-                    isPerson ? item.known_for_department : '';
-    const imageUrl = isPerson ? 
-      getImageUrl(item.profile_path, 'w200') : 
-      getImageUrl(item.poster_path, 'w200');
+    const subtitle = isMovie
+      ? item.release_date?.split('-')[0]
+      : isTv
+      ? item.first_air_date?.split('-')[0]
+      : isPerson
+      ? item.known_for_department
+      : '';
+    const imageUrl = isPerson
+      ? getImageUrl(item.profile_path, 'w200')
+      : getImageUrl(item.poster_path, 'w200');
 
     return (
-      <TouchableOpacity 
-        style={styles.resultItem}
+      <TouchableOpacity
+        style={[
+          styles.resultItem,
+          !isDarkMode && styles.lightResultItem,
+        ]}
         onPress={() => handleResultPress(item)}
         activeOpacity={0.7}
       >
-        <Image 
+        <Image
           source={{ uri: imageUrl }}
-          style={[styles.resultImage, isPerson && styles.personImage]}
+          style={[
+            styles.resultImage,
+            isPerson && styles.personImage,
+          ]}
         />
         <View style={styles.resultInfo}>
-          <Text style={styles.resultTitle} numberOfLines={2}>
+          <Text
+            style={[
+              styles.resultTitle,
+              !isDarkMode && styles.lightResultTitle,
+            ]}
+            numberOfLines={2}
+          >
             {title}
           </Text>
           {subtitle && (
-            <Text style={styles.resultSubtitle}>{subtitle}</Text>
+            <Text
+              style={[
+                styles.resultSubtitle,
+                !isDarkMode && styles.lightResultSubtitle,
+              ]}
+            >
+              {subtitle}
+            </Text>
           )}
           {item.vote_average > 0 && !isPerson && (
             <Text style={styles.resultRating}>
@@ -273,7 +319,13 @@ const SearchScreen = () => {
             </Text>
           )}
           {item.overview && (
-            <Text style={styles.resultOverview} numberOfLines={3}>
+            <Text
+              style={[
+                styles.resultOverview,
+                !isDarkMode && styles.lightResultOverview,
+              ]}
+              numberOfLines={3}
+            >
               {item.overview}
             </Text>
           )}
@@ -302,14 +354,26 @@ const SearchScreen = () => {
               key={filter.key}
               style={[
                 styles.filterButton,
-                searchType === filter.key && styles.activeFilterButton
+                searchType === filter.key &&
+                  styles.activeFilterButton,
+                !isDarkMode && styles.lightFilterButton,
+                !isDarkMode &&
+                  searchType === filter.key &&
+                  styles.lightActiveFilterButton,
               ]}
               onPress={() => handleSearchTypeChange(filter.key)}
             >
-              <Text style={[
-                styles.filterText,
-                searchType === filter.key && styles.activeFilterText
-              ]}>
+              <Text
+                style={[
+                  styles.filterText,
+                  searchType === filter.key &&
+                    styles.activeFilterText,
+                  !isDarkMode && styles.lightFilterText,
+                  !isDarkMode &&
+                    searchType === filter.key &&
+                    styles.lightActiveFilterText,
+                ]}
+              >
                 {filter.label}
               </Text>
             </TouchableOpacity>
@@ -324,22 +388,43 @@ const SearchScreen = () => {
     return (
       <View style={styles.sectionContainer}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Recent Searches</Text>
-          <TouchableOpacity onPress={() => dispatch(clearRecentSearches())}>
-            <Text style={styles.clearButton}>Clear All</Text>
+          <Text
+            style={[
+              styles.sectionTitle,
+              !isDarkMode && styles.lightSectionTitle,
+            ]}
+          >
+            Recent Searches
+          </Text>
+          <TouchableOpacity
+            onPress={() => dispatch(clearRecentSearches())}
+          >
+            <Text style={styles.clearAllText}>Clear All</Text>
           </TouchableOpacity>
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           {recentSearches.map((search, index) => (
             <TouchableOpacity
               key={index}
-              style={styles.searchChip}
+              style={[
+                styles.searchChip,
+                !isDarkMode && styles.lightSearchChip,
+              ]}
               onPress={() => handleQuickSearch(search)}
             >
-              <Text style={styles.searchChipText}>{search}</Text>
+              <Text
+                style={[
+                  styles.searchChipText,
+                  !isDarkMode && styles.lightSearchChipText,
+                ]}
+              >
+                {search}
+              </Text>
               <TouchableOpacity
                 style={styles.removeChip}
-                onPress={() => dispatch(removeRecentSearch(search))}
+                onPress={() =>
+                  dispatch(removeRecentSearch(search))
+                }
               >
                 <Text style={styles.removeChipText}>×</Text>
               </TouchableOpacity>
@@ -352,15 +437,32 @@ const SearchScreen = () => {
 
   const renderTrendingSearches = () => (
     <View style={styles.sectionContainer}>
-      <Text style={styles.sectionTitle}>Trending Searches</Text>
+      <Text
+        style={[
+          styles.sectionTitle,
+          !isDarkMode && styles.lightSectionTitle,
+        ]}
+      >
+        Trending Searches
+      </Text>
       <View style={styles.trendingContainer}>
         {trendingSearches.map((search, index) => (
           <TouchableOpacity
             key={index}
-            style={styles.trendingChip}
+            style={[
+              styles.trendingChip,
+              !isDarkMode && styles.lightTrendingChip,
+            ]}
             onPress={() => handleQuickSearch(search)}
           >
-            <Text style={styles.trendingChipText}>{search}</Text>
+            <Text
+              style={[
+                styles.trendingChipText,
+                !isDarkMode && styles.lightTrendingChipText,
+              ]}
+            >
+              {search}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -374,50 +476,95 @@ const SearchScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#0d1117" />
-      <View style={styles.searchHeader}>
-        <View style={styles.searchInputContainer}>
-          <Text style={styles.searchIcon}>🔍</Text>
+    <View
+      style={[
+        styles.container,
+        !isDarkMode && styles.lightContainer,
+      ]}
+    >
+      <StatusBar
+        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+        backgroundColor={isDarkMode ? '#0d1117' : '#fcfbfbff'}
+      />
+      <View
+        style={[
+          styles.searchHeader,
+          !isDarkMode && styles.lightSearchHeader,
+        ]}
+      >
+        <View
+          style={[
+            styles.searchInputContainer,
+            !isDarkMode && styles.lightSearchInputContainer,
+          ]}
+        >
+          <Text
+            style={[
+              styles.searchIcon,
+              !isDarkMode && styles.lightSearchIcon,
+            ]}
+          >
+            🔍
+          </Text>
           <TextInput
-            style={styles.searchInput}
+            style={[
+              styles.searchInput,
+              !isDarkMode && styles.lightSearchInput,
+            ]}
             placeholder="Search movies, TV shows, people..."
-            placeholderTextColor="#6e7681"
+            placeholderTextColor={isDarkMode ? '#6e7681' : '#9ca3af'}
             value={searchQuery}
             onChangeText={handleSearchChange}
             autoCapitalize="none"
             autoCorrect={false}
           />
           {searchQuery.length > 0 && (
-            <TouchableOpacity style={styles.clearButton} onPress={clearSearch}>
+            <TouchableOpacity
+              style={styles.clearButton}
+              onPress={clearSearch}
+            >
               <Text style={styles.clearButtonText}>×</Text>
             </TouchableOpacity>
           )}
         </View>
       </View>
+
       {renderSearchFilters()}
+
       <View style={styles.content}>
         {searchQuery.trim() === '' ? (
           <ScrollView showsVerticalScrollIndicator={false}>
             {renderRecentSearches()}
             {renderTrendingSearches()}
             <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>
-                {searchType === 'all' ? 'Popular Content' : 
-                 searchType === 'movie' ? 'Popular Movies' :
-                 searchType === 'tv' ? 'Popular TV Shows' :
-                 'Popular People'}
+              <Text
+                style={[
+                  styles.sectionTitle,
+                  !isDarkMode && styles.lightSectionTitle,
+                ]}
+              >
+                {searchType === 'all'
+                  ? 'Popular Content'
+                  : searchType === 'movie'
+                  ? 'Popular Movies'
+                  : searchType === 'tv'
+                  ? 'Popular TV Shows'
+                  : 'Popular People'}
               </Text>
               {defaultLoading ? (
                 <View style={styles.loadingContainer}>
                   <ActivityIndicator size="large" color="#e50914" />
-                  <Text style={styles.loadingText}>Loading content...</Text>
+                  <Text style={styles.loadingText}>
+                    Loading content...
+                  </Text>
                 </View>
               ) : (
                 <FlatList
                   data={defaultContent.slice(0, 20)}
                   renderItem={renderSearchResult}
-                  keyExtractor={(item, index) => `default-${item.id}-${index}`}
+                  keyExtractor={(item, index) =>
+                    `default-${item.id}-${index}`
+                  }
                   showsVerticalScrollIndicator={false}
                   scrollEnabled={false}
                 />
@@ -443,18 +590,39 @@ const SearchScreen = () => {
               </View>
             ) : searchResults.length === 0 ? (
               <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>No results found for "{searchQuery}"</Text>
-                <Text style={styles.emptySubtext}>Try different keywords or check spelling</Text>
+                <Text
+                  style={[
+                    styles.emptyText,
+                    !isDarkMode && styles.lightEmptyText,
+                  ]}
+                >
+                  No results found for "{searchQuery}"
+                </Text>
+                <Text
+                  style={[
+                    styles.emptySubtext,
+                    !isDarkMode && styles.lightEmptySubtext,
+                  ]}
+                >
+                  Try different keywords or check spelling
+                </Text>
               </View>
             ) : (
               <>
-                <Text style={styles.resultsCount}>
+                <Text
+                  style={[
+                    styles.resultsCount,
+                    !isDarkMode && styles.lightResultsCount,
+                  ]}
+                >
                   {totalResults.toLocaleString()} results found
                 </Text>
                 <FlatList
                   data={searchResults}
                   renderItem={renderSearchResult}
-                  keyExtractor={(item, index) => `${item.id}-${index}`}
+                  keyExtractor={(item, index) =>
+                    `${item.id}-${index}`
+                  }
                   showsVerticalScrollIndicator={false}
                   onEndReached={loadMoreResults}
                   onEndReachedThreshold={0.1}
@@ -462,8 +630,13 @@ const SearchScreen = () => {
                     if (isLoadingMore) {
                       return (
                         <View style={styles.loadMoreContainer}>
-                          <ActivityIndicator size="small" color="#e50914" />
-                          <Text style={styles.loadMoreText}>Loading more...</Text>
+                          <ActivityIndicator
+                            size="small"
+                            color="#e50914"
+                          />
+                          <Text style={styles.loadMoreText}>
+                            Loading more...
+                          </Text>
                         </View>
                       );
                     }
@@ -480,16 +653,26 @@ const SearchScreen = () => {
 };
 
 const styles = StyleSheet.create({
+  // base dark
   container: {
     flex: 1,
     backgroundColor: '#0d1117',
   },
+  lightContainer: {
+    flex: 1,
+    backgroundColor: '#fcfbfbff',
+  },
+
   searchHeader: {
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 12,
     backgroundColor: '#0d1117',
   },
+  lightSearchHeader: {
+    backgroundColor: '#ffffff',
+  },
+
   searchInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -500,16 +683,30 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#30363d',
   },
+  lightSearchInputContainer: {
+    backgroundColor: '#f3f4f6',
+    borderColor: '#e5e7eb',
+  },
+
   searchIcon: {
     fontSize: 16,
     marginRight: 8,
+    color: '#8b949e',
   },
+  lightSearchIcon: {
+    color: '#6b7280',
+  },
+
   searchInput: {
     flex: 1,
     fontSize: 16,
     color: '#f0f6fc',
     paddingVertical: 12,
   },
+  lightSearchInput: {
+    color: '#111827',
+  },
+
   clearButton: {
     padding: 4,
   },
@@ -518,10 +715,12 @@ const styles = StyleSheet.create({
     color: '#6e7681',
     fontWeight: 'bold',
   },
+
   filtersContainer: {
     paddingHorizontal: 16,
     paddingBottom: 12,
   },
+
   filterButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
@@ -531,35 +730,66 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#30363d',
   },
+  lightFilterButton: {
+    backgroundColor: '#e5e7eb',
+    borderColor: '#e5e7eb',
+  },
+
   activeFilterButton: {
     backgroundColor: '#e50914',
     borderColor: '#e50914',
   },
+  lightActiveFilterButton: {
+    backgroundColor: '#e50914',
+    borderColor: '#e50914',
+  },
+
   filterText: {
     color: '#8b949e',
     fontSize: 14,
     fontWeight: '500',
   },
+  lightFilterText: {
+    color: '#4b5563',
+  },
+
   activeFilterText: {
     color: '#ffffff',
   },
+  lightActiveFilterText: {
+    color: '#ffffff',
+  },
+
   content: {
     flex: 1,
   },
+
   sectionContainer: {
     padding: 16,
   },
+
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
   },
+
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#f0f6fc',
   },
+  lightSectionTitle: {
+    color: '#111827',
+  },
+
+  clearAllText: {
+    color: '#e50914',
+    fontSize: 13,
+    fontWeight: '500',
+  },
+
   searchChip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -571,11 +801,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#30363d',
   },
+  lightSearchChip: {
+    backgroundColor: '#e5e7eb',
+    borderColor: '#d1d5db',
+  },
+
   searchChipText: {
     color: '#f0f6fc',
     fontSize: 14,
     marginRight: 4,
   },
+  lightSearchChipText: {
+    color: '#111827',
+  },
+
   removeChip: {
     marginLeft: 4,
   },
@@ -584,10 +823,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+
   trendingContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
   },
+
   trendingChip: {
     backgroundColor: '#30363d',
     borderRadius: 16,
@@ -596,19 +837,32 @@ const styles = StyleSheet.create({
     marginRight: 8,
     marginBottom: 8,
   },
+  lightTrendingChip: {
+    backgroundColor: '#e5e7eb',
+  },
+
   trendingChipText: {
     color: '#8b949e',
     fontSize: 14,
   },
+  lightTrendingChipText: {
+    color: '#374151',
+  },
+
   resultsContainer: {
     flex: 1,
     paddingHorizontal: 16,
   },
+
   resultsCount: {
     color: '#8b949e',
     fontSize: 14,
     marginBottom: 16,
   },
+  lightResultsCount: {
+    color: '#4b5563',
+  },
+
   resultItem: {
     flexDirection: 'row',
     marginBottom: 16,
@@ -618,47 +872,69 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#30363d',
   },
+  lightResultItem: {
+    backgroundColor: '#ffffff',
+    borderColor: '#e5e7eb',
+  },
+
   resultImage: {
     width: 80,
     height: 120,
     borderRadius: 8,
     backgroundColor: '#30363d',
   },
+
   personImage: {
     height: 80,
     borderRadius: 40,
   },
+
   resultInfo: {
     flex: 1,
     marginLeft: 12,
     justifyContent: 'flex-start',
   },
+
   resultTitle: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#f0f6fc',
     marginBottom: 4,
   },
+  lightResultTitle: {
+    color: '#111827',
+  },
+
   resultSubtitle: {
     fontSize: 14,
     color: '#8b949e',
     marginBottom: 4,
   },
+  lightResultSubtitle: {
+    color: '#6b7280',
+  },
+
   resultRating: {
     fontSize: 14,
     color: '#ffd700',
     marginBottom: 6,
   },
+
   resultOverview: {
     fontSize: 13,
     color: '#8b949e',
     lineHeight: 18,
     marginBottom: 8,
   },
+  lightResultOverview: {
+    color: '#4b5563',
+  },
+
   resultMeta: {
     flexDirection: 'row',
     alignItems: 'center',
   },
+
   mediaType: {
     fontSize: 12,
     color: '#e50914',
@@ -668,63 +944,80 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     overflow: 'hidden',
   },
+
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingTop: 100,
   },
+
   loadingText: {
     color: '#8b949e',
     marginTop: 16,
     fontSize: 16,
   },
+
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingTop: 100,
   },
+
   errorText: {
     color: '#f85149',
     fontSize: 16,
     textAlign: 'center',
     marginBottom: 16,
   },
+
   retryButton: {
     backgroundColor: '#e50914',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,
   },
+
   retryButtonText: {
     color: '#ffffff',
     fontSize: 16,
     fontWeight: 'bold',
   },
+
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingTop: 100,
   },
+
   emptyText: {
     color: '#f0f6fc',
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 8,
   },
+  lightEmptyText: {
+    color: '#111827',
+  },
+
   emptySubtext: {
     color: '#8b949e',
     fontSize: 14,
     textAlign: 'center',
   },
+  lightEmptySubtext: {
+    color: '#6b7280',
+  },
+
   loadMoreContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 20,
   },
+
   loadMoreText: {
     color: '#8b949e',
     marginLeft: 8,

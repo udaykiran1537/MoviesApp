@@ -6,6 +6,7 @@ import BottomTabNavigator from "../navigation/BottomTabNavigator";
 import MovieDetail from '../screens/MovieDetail';
 import SeriesDetail from '../screens/SeriesDetail';
 import { useSelector } from 'react-redux';
+import Chatbot from '../screens/Chatbot';
 
 const Stack = createStackNavigator();
 
@@ -19,6 +20,7 @@ const StackNavigator = () => {
       <Stack.Screen name="Bottom" component={BottomTabNavigator} />
       <Stack.Screen name="MovieDetail" component={MovieDetail} />
       <Stack.Screen name="SeriesDetail" component={SeriesDetail} />
+      <Stack.Screen name="Chatbot" component={Chatbot} />
     </Stack.Navigator>
   );
 };

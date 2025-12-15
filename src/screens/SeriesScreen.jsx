@@ -42,6 +42,7 @@ import {
   saveWishlistToStorage 
 } from '../redux/slices/wishlistSlice';
 
+
 const { width, height } = Dimensions.get('window');
 
 const SeriesScreen = () => {
@@ -64,25 +65,26 @@ const SeriesScreen = () => {
     onTheAirLoading,
     onTheAirError,
   } = useSelector((state) => state.series);
-  const { wishlistSeries } = useSelector((state) => state.wishlist);
 
-  const isSeriesInWishlist = (seriesId) => {
-    return wishlistSeries.some(series => series.id === seriesId);
-  };
+  const { wishlistSeries } = useSelector((state) => state.wishlist);
+  const { isDarkMode } = useSelector(state => state.theme);
+
+  const isSeriesInWishlist = (seriesId) =>
+    wishlistSeries.some((series) => series.id === seriesId);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
 
   const handleSeriesWishlistToggle = (series, event) => {
     event.stopPropagation();
-    
+
     let posterPath = null;
     if (series.image && series.image.includes('image.tmdb.org')) {
       const urlParts = series.image.split('/');
       const filename = urlParts[urlParts.length - 1];
       posterPath = '/' + filename;
     }
-    
+
     const seriesData = {
       id: series.id,
       name: series.title,
@@ -92,9 +94,9 @@ const SeriesScreen = () => {
       overview: series.overview || '',
       first_air_date: series.firstAirDate || '',
       vote_average: parseFloat(series.rating) || 0,
-      type: 'series'
+      type: 'series',
     };
-    
+
     dispatch(toggleSeriesInWishlist(seriesData));
     dispatch(saveWishlistToStorage());
   };
@@ -103,33 +105,39 @@ const SeriesScreen = () => {
     try {
       const seriesVideos = await tmdbService.getSeriesVideos(featuredSeries.id);
       if (seriesVideos && seriesVideos.results && seriesVideos.results.length > 0) {
-        const trailers = seriesVideos.results.filter(video => 
-          video.type === 'Trailer' && video.site === 'YouTube'
+        const trailers = seriesVideos.results.filter(
+          (video) => video.type === 'Trailer' && video.site === 'YouTube',
         );
         if (trailers.length > 0) {
           const trailer = trailers[0];
           const youtubeUrl = `https://www.youtube.com/watch?v=${trailer.key}`;
-          Linking.openURL(youtubeUrl).catch(err => {
+          Linking.openURL(youtubeUrl).catch(() => {
             Alert.alert('Error', 'Could not open YouTube');
           });
         } else {
           const searchQuery = `${featuredSeries.title} official trailer`;
-          const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(searchQuery)}`;
-          Linking.openURL(searchUrl).catch(err => {
+          const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(
+            searchQuery,
+          )}`;
+          Linking.openURL(searchUrl).catch(() => {
             Alert.alert('Error', 'Could not open YouTube search');
           });
         }
       } else {
         const searchQuery = `${featuredSeries.title} official trailer`;
-        const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(searchQuery)}`;
-        Linking.openURL(searchUrl).catch(err => {
+        const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(
+          searchQuery,
+        )}`;
+        Linking.openURL(searchUrl).catch(() => {
           Alert.alert('Error', 'Could not open YouTube search');
         });
       }
     } catch (error) {
       const searchQuery = `${featuredSeries.title} official trailer`;
-      const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(searchQuery)}`;
-      Linking.openURL(searchUrl).catch(err => {
+      const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(
+        searchQuery,
+      )}`;
+      Linking.openURL(searchUrl).catch(() => {
         Alert.alert('Error', 'Could not open YouTube');
       });
     }
@@ -143,7 +151,7 @@ const SeriesScreen = () => {
       if (!data || !data.results || !Array.isArray(data.results)) {
         throw new Error('Invalid API response format');
       }
-      const series = data.results.slice(0, 20).map(show => ({
+      const series = data.results.slice(0, 20).map((show) => ({
         id: show.id,
         title: show.name,
         image: getImageUrl(show.poster_path),
@@ -167,7 +175,7 @@ const SeriesScreen = () => {
       if (!data || !data.results || !Array.isArray(data.results)) {
         throw new Error('Invalid API response format');
       }
-      const series = data.results.slice(0, 20).map(show => ({
+      const series = data.results.slice(0, 20).map((show) => ({
         id: show.id,
         title: show.name,
         image: getImageUrl(show.poster_path),
@@ -179,7 +187,9 @@ const SeriesScreen = () => {
       }));
       dispatch(setPopularTvSeries(series));
     } catch (error) {
-      dispatch(setPopularError(`Failed to load popular series: ${error.message}`));
+      dispatch(
+        setPopularError(`Failed to load popular series: ${error.message}`),
+      );
     }
   };
 
@@ -191,7 +201,7 @@ const SeriesScreen = () => {
       if (!data || !data.results || !Array.isArray(data.results)) {
         throw new Error('Invalid API response format');
       }
-      const series = data.results.slice(0, 20).map(show => ({
+      const series = data.results.slice(0, 20).map((show) => ({
         id: show.id,
         title: show.name,
         image: getImageUrl(show.poster_path),
@@ -203,7 +213,9 @@ const SeriesScreen = () => {
       }));
       dispatch(setTopRatedTvSeries(series));
     } catch (error) {
-      dispatch(setTopRatedError(`Failed to load top rated series: ${error.message}`));
+      dispatch(
+        setTopRatedError(`Failed to load top rated series: ${error.message}`),
+      );
     }
   };
 
@@ -215,7 +227,7 @@ const SeriesScreen = () => {
       if (!data || !data.results || !Array.isArray(data.results)) {
         throw new Error('Invalid API response format');
       }
-      const series = data.results.slice(0, 20).map(show => ({
+      const series = data.results.slice(0, 20).map((show) => ({
         id: show.id,
         title: show.name,
         image: getImageUrl(show.poster_path),
@@ -227,7 +239,11 @@ const SeriesScreen = () => {
       }));
       dispatch(setOnTheAirTvSeries(series));
     } catch (error) {
-      dispatch(setOnTheAirError(`Failed to load on the air series: ${error.message}`));
+      dispatch(
+        setOnTheAirError(
+          `Failed to load on the air series: ${error.message}`,
+        ),
+      );
     }
   };
 
@@ -251,33 +267,33 @@ const SeriesScreen = () => {
   }, []);
 
   const handleSeriesPress = (series) => {
-    // Debug log
-    console.log('Navigating to series:', series);
-    
-    navigation.navigate('SeriesDetail', { 
+    navigation.navigate('SeriesDetail', {
       series: {
         id: series.id,
         name: series.title || series.name,
         overview: series.overview || '',
         poster_path: series.poster_path || null,
         backdrop_path: series.backdrop_path || null,
-        vote_average: typeof series.rating === 'string' ? parseFloat(series.rating) : (series.rating || 0),
+        vote_average:
+          typeof series.rating === 'string'
+            ? parseFloat(series.rating)
+            : series.rating || 0,
         first_air_date: series.firstAirDate || '',
-        image: series.image
-      }
+        image: series.image,
+      },
     });
   };
 
   const renderSeriesItem = ({ item }) => {
     const isInWishlist = isSeriesInWishlist(item.id);
     return (
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.seriesItem}
         onPress={() => handleSeriesPress(item)}
       >
         <View style={styles.seriesImageContainer}>
           <Image source={{ uri: item.image }} style={styles.seriesImage} />
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.seriesWishlistButton}
             onPress={(event) => handleSeriesWishlistToggle(item, event)}
           >
@@ -287,7 +303,13 @@ const SeriesScreen = () => {
           </TouchableOpacity>
         </View>
         <View>
-          <Text style={styles.seriesTitle} numberOfLines={2}>
+          <Text
+            style={[
+              styles.seriesTitle,
+              !isDarkMode && styles.lightSeriesTitle,
+            ]}
+            numberOfLines={2}
+          >
             {item.title}
           </Text>
           <Text style={styles.seriesRating}>⭐ {item.rating}</Text>
@@ -297,12 +319,26 @@ const SeriesScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-      <ScrollView 
-        style={styles.scrollContainer} 
+    <View
+      style={[
+        styles.container,
+        !isDarkMode && styles.lightContainer,
+      ]}
+    >
+      <StatusBar
+        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+        backgroundColor="transparent"
+        translucent
+      />
+
+  
+
+
+      <ScrollView
+        style={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
       >
+        {/* Featured */}
         <Animated.View
           style={[
             styles.featuredSection,
@@ -312,17 +348,55 @@ const SeriesScreen = () => {
             },
           ]}
         >
-          <Image source={{ uri: featuredSeries.image }} style={styles.featuredImage} />
-          <View style={styles.featuredOverlay}>
+          <Image
+            source={{ uri: featuredSeries.image }}
+            style={styles.featuredImage}
+          />
+          <View
+            style={[
+              styles.featuredOverlay,
+              !isDarkMode && styles.lightFeaturedOverlay,
+            ]}
+          >
             <View style={styles.featuredContent}>
-              <Text style={styles.featuredTitle}>{featuredSeries.title}</Text>
-              <Text style={styles.featuredGenre}>{featuredSeries.genre}</Text>
-              <Text style={styles.featuredRating}>⭐ {featuredSeries.rating}</Text>
-              <Text style={styles.featuredDescription} numberOfLines={3}>
+              <Text
+                style={[
+                  styles.featuredTitle,
+                  !isDarkMode && styles.lightFeaturedTitle,
+                ]}
+              >
+                {featuredSeries.title}
+              </Text>
+              <Text
+                style={[
+                  styles.featuredGenre,
+                  !isDarkMode && styles.lightFeaturedGenre,
+                ]}
+              >
+                {featuredSeries.genre}
+              </Text>
+              <Text
+                style={[
+                  styles.featuredRating,
+                  !isDarkMode && styles.lightFeaturedRating,
+                ]}
+              >
+                ⭐ {featuredSeries.rating}
+              </Text>
+              <Text
+                style={[
+                  styles.featuredDescription,
+                  !isDarkMode && styles.lightFeaturedDescription,
+                ]}
+                numberOfLines={3}
+              >
                 {featuredSeries.description}
               </Text>
               <View style={styles.actionButtons}>
-                <TouchableOpacity style={styles.playButton} onPress={handleFeaturedSeriesPlay}>
+                <TouchableOpacity
+                  style={styles.playButton}
+                  onPress={handleFeaturedSeriesPlay}
+                >
                   <Text style={styles.playButtonText}>▶ Play</Text>
                 </TouchableOpacity>
               </View>
@@ -330,6 +404,7 @@ const SeriesScreen = () => {
           </View>
         </Animated.View>
 
+        {/* Airing Today */}
         <Animated.View
           style={[
             styles.seriesSection,
@@ -339,7 +414,14 @@ const SeriesScreen = () => {
             },
           ]}
         >
-          <Text style={styles.sectionTitle}>Airing Today</Text>
+          <Text
+            style={[
+              styles.sectionTitle,
+              !isDarkMode && styles.lightSectionTitle,
+            ]}
+          >
+            Airing Today
+          </Text>
           {airingTodayLoading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color="#e50914" />
@@ -348,8 +430,8 @@ const SeriesScreen = () => {
           ) : airingTodayError ? (
             <View style={styles.errorContainer}>
               <Text style={styles.errorText}>{airingTodayError}</Text>
-              <TouchableOpacity 
-                style={styles.retryButton} 
+              <TouchableOpacity
+                style={styles.retryButton}
                 onPress={fetchAiringTodayTvSeries}
               >
                 <Text style={styles.retryButtonText}>Retry</Text>
@@ -367,8 +449,16 @@ const SeriesScreen = () => {
           )}
         </Animated.View>
 
+        {/* Popular */}
         <Animated.View style={styles.seriesSection}>
-          <Text style={styles.sectionTitle}>Popular TV Series</Text>
+          <Text
+            style={[
+              styles.sectionTitle,
+              !isDarkMode && styles.lightSectionTitle,
+            ]}
+          >
+            Popular TV Series
+          </Text>
           {popularLoading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color="#e50914" />
@@ -377,8 +467,8 @@ const SeriesScreen = () => {
           ) : popularError ? (
             <View style={styles.errorContainer}>
               <Text style={styles.errorText}>{popularError}</Text>
-              <TouchableOpacity 
-                style={styles.retryButton} 
+              <TouchableOpacity
+                style={styles.retryButton}
                 onPress={fetchPopularTvSeries}
               >
                 <Text style={styles.retryButtonText}>Retry</Text>
@@ -396,18 +486,28 @@ const SeriesScreen = () => {
           )}
         </Animated.View>
 
+        {/* Top Rated */}
         <Animated.View style={styles.seriesSection}>
-          <Text style={styles.sectionTitle}>Top Rated TV Series</Text>
+          <Text
+            style={[
+              styles.sectionTitle,
+              !isDarkMode && styles.lightSectionTitle,
+            ]}
+          >
+            Top Rated TV Series
+          </Text>
           {topRatedLoading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color="#e50914" />
-              <Text style={styles.loadingText}>Loading top rated series...</Text>
+              <Text style={styles.loadingText}>
+                Loading top rated series...
+              </Text>
             </View>
           ) : topRatedError ? (
             <View style={styles.errorContainer}>
               <Text style={styles.errorText}>{topRatedError}</Text>
-              <TouchableOpacity 
-                style={styles.retryButton} 
+              <TouchableOpacity
+                style={styles.retryButton}
                 onPress={fetchTopRatedTvSeries}
               >
                 <Text style={styles.retryButtonText}>Retry</Text>
@@ -425,18 +525,28 @@ const SeriesScreen = () => {
           )}
         </Animated.View>
 
+        {/* On The Air */}
         <Animated.View style={styles.seriesSection}>
-          <Text style={styles.sectionTitle}>On The Air</Text>
+          <Text
+            style={[
+              styles.sectionTitle,
+              !isDarkMode && styles.lightSectionTitle,
+            ]}
+          >
+            On The Air
+          </Text>
           {onTheAirLoading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color="#e50914" />
-              <Text style={styles.loadingText}>Loading on the air series...</Text>
+              <Text style={styles.loadingText}>
+                Loading on the air series...
+              </Text>
             </View>
           ) : onTheAirError ? (
             <View style={styles.errorContainer}>
               <Text style={styles.errorText}>{onTheAirError}</Text>
-              <TouchableOpacity 
-                style={styles.retryButton} 
+              <TouchableOpacity
+                style={styles.retryButton}
                 onPress={fetchOnTheAirTvSeries}
               >
                 <Text style={styles.retryButtonText}>Retry</Text>
@@ -461,10 +571,16 @@ const SeriesScreen = () => {
 };
 
 const styles = StyleSheet.create({
+  // base dark
   container: {
     flex: 1,
     backgroundColor: '#0d1117',
   },
+  lightContainer: {
+    flex: 1,
+    backgroundColor: '#fcfbfbff',
+  },
+
   navbar: {
     position: 'absolute',
     top: 0,
@@ -476,32 +592,45 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(13, 17, 23, 0.9)',
     zIndex: 1000,
   },
+  lightNavbar: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+  },
+
   navContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+
   logo: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#e50914',
     letterSpacing: 1,
   },
+
   rightActions: {
     flexDirection: 'row',
     alignItems: 'center',
   },
+
   searchBtn: {
     padding: 8,
     marginRight: 15,
   },
+
   searchIcon: {
     fontSize: 20,
     color: '#ffffff',
   },
+  lightSearchIcon: {
+    color: '#000000',
+  },
+
   profileBtn: {
     padding: 2,
   },
+
   avatar: {
     width: 36,
     height: 36,
@@ -510,23 +639,28 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+
   avatarText: {
-    color: '#fff',
+    color: '#ffffff',
     fontSize: 16,
     fontWeight: 'bold',
   },
+
   scrollContainer: {
     flex: 1,
   },
+
   featuredSection: {
     height: height * 0.6,
     position: 'relative',
   },
+
   featuredImage: {
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
   },
+
   featuredOverlay: {
     position: 'absolute',
     bottom: 0,
@@ -536,34 +670,56 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(13, 17, 23, 0.7)',
     justifyContent: 'flex-end',
   },
+  lightFeaturedOverlay: {
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+  },
+
   featuredContent: {
     padding: 20,
   },
+
   featuredTitle: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#ffffff',
     marginBottom: 8,
   },
+  lightFeaturedTitle: {
+    color: '#000000',
+  },
+
   featuredGenre: {
     fontSize: 16,
     color: '#8b949e',
     marginBottom: 4,
   },
+  lightFeaturedGenre: {
+    color: '#4b5563',
+  },
+
   featuredRating: {
     fontSize: 16,
-    color: '#fff',
+    color: '#ffffff',
     marginBottom: 12,
   },
+  lightFeaturedRating: {
+    color: '#000000',
+  },
+
   featuredDescription: {
     fontSize: 16,
     color: '#8b949e',
     lineHeight: 22,
     marginBottom: 20,
   },
+  lightFeaturedDescription: {
+    color: '#111827',
+  },
+
   actionButtons: {
     flexDirection: 'row',
   },
+
   playButton: {
     backgroundColor: '#e50914',
     paddingHorizontal: 30,
@@ -571,11 +727,13 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginRight: 15,
   },
+
   playButtonText: {
-    color: '#fff',
+    color: '#ffffff',
     fontSize: 16,
     fontWeight: 'bold',
   },
+
   addButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     paddingHorizontal: 20,
@@ -584,71 +742,88 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#30363d',
   },
+
   addButtonText: {
-    color: '#fff',
+    color: '#ffffff',
     fontSize: 16,
     fontWeight: '500',
   },
+
   seriesSection: {
     paddingTop: 30,
     paddingBottom: 20,
   },
+
   sectionTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#ffffff',
     marginBottom: 20,
     paddingHorizontal: 20,
   },
+  lightSectionTitle: {
+    color: '#000000',
+  },
+
   loadingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 40,
   },
+
   loadingText: {
     color: '#8b949e',
     fontSize: 16,
     marginLeft: 10,
   },
+
   errorContainer: {
     alignItems: 'center',
     paddingVertical: 40,
     paddingHorizontal: 20,
   },
+
   errorText: {
     color: '#8b949e',
     fontSize: 16,
     textAlign: 'center',
     marginBottom: 15,
   },
+
   retryButton: {
     backgroundColor: '#e50914',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 6,
   },
+
   retryButtonText: {
-    color: '#fff',
+    color: '#ffffff',
     fontSize: 14,
     fontWeight: 'bold',
   },
+
   seriesList: {
     paddingLeft: 20,
   },
+
   seriesItem: {
     marginRight: 15,
     width: 120,
   },
+
   seriesImageContainer: {
     position: 'relative',
   },
+
   seriesImage: {
     width: 120,
     height: 180,
     borderRadius: 8,
     backgroundColor: '#21262d',
   },
+
   seriesWishlistButton: {
     position: 'absolute',
     top: 8,
@@ -668,23 +843,30 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
+
   seriesWishlistIcon: {
     fontSize: 16,
   },
+
   seriesTitle: {
     fontSize: 12,
-    color: '#fff',
+    color: '#ffffff',
     marginTop: 8,
     textAlign: 'center',
     fontWeight: '500',
     lineHeight: 16,
   },
+  lightSeriesTitle: {
+    color: '#000000',
+  },
+
   seriesRating: {
     fontSize: 11,
     color: '#8b949e',
     marginTop: 4,
     textAlign: 'center',
   },
+
   bottomSpacing: {
     height: 100,
   },
